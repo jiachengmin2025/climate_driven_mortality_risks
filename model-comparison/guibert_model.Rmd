@@ -1,0 +1,151 @@
+---
+title: "Guibert's model"
+author: "Jiacheng Min"
+date: "`r Sys.Date()`"
+output: pdf_document
+---
+
+# Used Packages
+```{r, warning=FALSE}
+packages <- c("readxl", "ggplot2", "forecast", "dplyr", "gridExtra", "writexl", 
+              "tseries", "hwwntest", "dlnm", "splines", "ISOweek", "mgcv", 
+              "Metrics", "demography", "seastests", "MTS", "tidyr", "grid",
+              "nortest", "seastests", "splines")
+invisible(lapply(packages, library, character.only = TRUE))
+```
+
+
+# Load data
+```{r, warning = FALSE}
+region_name = c("Attiki", "Lisbon", "Roma")
+ages = c('Y20_64', 'Y65_74', 'Y75_84', 'Y_GE85')
+setwd("/Users/jiachengabelmin/Desktop/LC_DLNM/Data/Combined_data/")
+Y20_64 = read_xlsx("/Users/jiachengabelmin/Desktop/LC_DLNM/Data/Combined_data/Y20_64_combined.xlsx")
+Y65_74 = read_xlsx("/Users/jiachengabelmin/Desktop/LC_DLNM/Data/Combined_data/Y65_74_combined.xlsx")
+Y75_84 = read_xlsx("/Users/jiachengabelmin/Desktop/LC_DLNM/Data/Combined_data/Y75_84_combined.xlsx")
+Y_GE85 = read_xlsx("/Users/jiachengabelmin/Desktop/LC_DLNM/Data/Combined_data/Y_GE85_combined.xlsx")
+``` 
+
+
+# Load functions
+```{r}
+files <- list.files("/Users/jiachengabelmin/Desktop/LC_DLNM/Code/Function/", pattern = "\\.R$", full.names = TRUE)
+invisible(sapply(files, source))
+```
+
+## Mortality rates
+```{r}
+col_name = c("Y20_64", "Y65_74", "Y75_84", "Y_GE85")
+
+Attiki = cbind(Y20_64[,3]/Y20_64[,9],Y65_74[,3]/Y65_74[,9], 
+               Y75_84[,3]/Y75_84[,9], Y_GE85[,3]/Y_GE85[,9])
+colnames(Attiki) = col_name
+
+Lisbon = cbind(Y20_64[,4]/Y20_64[,10],Y65_74[,4]/Y65_74[,10],
+               Y75_84[,4]/Y75_84[,10], Y_GE85[,4]/Y_GE85[,10])
+colnames(Lisbon) = col_name
+
+Roma = cbind(Y20_64[,6]/Y20_64[,12],Y65_74[,6]/Y65_74[,12], 
+             Y75_84[,6]/Y75_84[,12], Y_GE85[,6]/Y_GE85[,12])
+colnames(Roma) = col_name
+
+## Convert to standard weekly mortality (*52) 
+Attiki = Attiki * 52
+Lisbon = Lisbon * 52
+Roma = Roma * 52
+## Add indices
+Attiki <- data.frame(time = 1:nrow(Attiki), Attiki)
+Lisbon <- data.frame(time = 1:nrow(Lisbon), Lisbon)
+Roma <- data.frame(time = 1:nrow(Roma), Roma)
+```
+
+## Cross-basis matrix
+```{r}
+# before cross-basis
+load("/Users/jiachengabelmin/Desktop/LC_DLNM/Code/Crossbasis_matrix/cb_Attiki.RData")
+load("/Users/jiachengabelmin/Desktop/LC_DLNM/Code/Crossbasis_matrix/cb_Lisbon.RData")
+load("/Users/jiachengabelmin/Desktop/LC_DLNM/Code/Crossbasis_matrix/cb_Roma.RData")
+```
+
+# Exapnding window cross-validataion
+## Preparation
+```{r}
+# prepare data and mixed frequency matrix
+dat_list <- list(Attiki = Attiki, Lisbon = Lisbon, Roma = Roma)
+cb_list <- list(Attiki = UTCI_ext.Attiki, Lisbon = UTCI_ext.Lisbon, Roma = UTCI_ext.Roma)
+
+# create expanding window cross-validation sets
+expanding_window_sets <- lapply(0:9, function(i) {
+   Guibert.create_train_test_sets(dat_list, cb_list, train_size = 102 + i * 8, test_size = 180 + i * 8, lag = 21, var.df = 3, lag.df = 3, degree = 3)
+})
+names(expanding_window_sets) = paste0("set_", 1:10)
+```
+
+## Run expanding window cross-validation
+```{r}
+expanding_window_result <- lapply(expanding_window_sets, function(set) {
+  
+  # test forecasting steps
+  H <- nrow(set$test_set$dat_list[[1]])
+
+  # Train model
+  G_fit.train <- Guibert.fit(regions_data = set$train_set$dat_list,
+                             cb_list = set$train_set$cb_list, ns_df = 8)
+
+  # Forecast model
+  G_fc <- Guibert.forecast(LL_fit = G_fit.train$LL_fit,
+                           dlnm_estimates_list = G_fit.train$dlnm_estimates_list,
+                           cb_matrix_test = set$test_set$cb_list,
+                           forecast_step = H)
+  # Test valuesß
+  test_values <- set$test_set$dat_list
+  
+  # Output
+  list(train_model = G_fit.train, model_forecast = G_fc, 
+       test_values = test_values)
+})
+
+names(expanding_window_result) <- names(expanding_window_sets)
+```
+
+## Compute MAE (*100 scale)
+```{r}
+Guibert_mae_list = lapply(expanding_window_result, function(set){
+  ## Backfitting DLNM-LL
+  forecast_Guibert = lapply(set$model_forecast$Guibert.forecast.list, function(region){
+    as.data.frame(region)
+  })
+  ## Test values
+  test.values = lapply(set$test_values, function(region){
+    as.data.frame(region)
+  })
+  
+  Guibert_mae <- lapply(names(forecast_Guibert), function(region) {
+    sapply(names(forecast_Guibert[[region]]), function(age_group) {
+      100*mae(test.values[[region]][[age_group]], forecast_Guibert[[region]][[age_group]])
+    })
+  })
+  names(Guibert_mae) <- names(forecast_Guibert)
+  BDLNMLL_mae <- lapply(Guibert_mae, function(x) setNames(x, names(forecast_Guibert[[1]])))
+  return(Guibert_mae)
+})
+```
+
+## Compute cross-validated MAE
+```{r}
+Guibert_avg_mae <- setNames(lapply(region_name, function(r){
+  ave_mae <- do.call(cbind, lapply(Guibert_mae_list, function(win) win[[r]][ages]))
+  setNames(round(rowMeans(ave_mae, na.rm = TRUE), 4), ages)
+}), region_name)
+
+Guibert_avg_mae
+```
+
+
+
+
+
+
+
+
+
