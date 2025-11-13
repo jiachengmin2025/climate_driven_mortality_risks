@@ -1,0 +1,277 @@
+---
+title: "Annualized Data Plotting"
+author: "Jiacheng Min"
+date: "`r Sys.Date()`"
+output: pdf_document
+---
+
+# Load packages
+```{r, warning = FALSE, output = FALSE}
+packages <- c("readxl", "ggplot2", "forecast", "dplyr", "gridExtra", "writexl", 
+              "tseries", "hwwntest", "dlnm", "splines", "ISOweek", "mgcv", 
+              "Metrics", "demography", "seastests", "MTS", "reshape2", "astsa",
+              "MASS", "patchwork")
+lapply(packages, library, character.only = TRUE)
+```
+
+# Load DLNM-LL Results
+```{r}
+load("/Users/jiachengabelmin/Desktop/LC_DLNM/Results/Simulated_annualized_mortality_rates/final_LL.sim.annualized.rcp26.RData")
+load("/Users/jiachengabelmin/Desktop/LC_DLNM/Results/Simulated_annualized_mortality_rates/final_LL.sim.annualized.rcp85.RData")
+```
+
+# DLNM-LL Results under Different Scenarios (Functions)
+```{r}
+# Function to prepare data for plotting (with filtering by start_index)
+prepare_plot_data <- function(sim_data, region, age_group, start_year, start_index) {
+  # Extract data for the specified region and age group
+  region_data <- sim_data[[region]]
+  age_group_data <- lapply(region_data, function(sim) sim[[age_group]])
+  
+  # Combine all simulations into a matrix
+  sim_matrix <- do.call(rbind, age_group_data)
+  sim_matrix <- sim_matrix[, start_index:ncol(sim_matrix)]  # Filter data from start_index onward
+  
+  # Calculate mean and confidence intervals
+  summary_df <- data.frame(
+    time = seq(start_year, start_year + ncol(sim_matrix) - 1),  # Generate yearly time points
+    mean = colMeans(sim_matrix),
+    lower = apply(sim_matrix, 2, quantile, probs = 0.025),
+    upper = apply(sim_matrix, 2, quantile, probs = 0.975)
+  )
+  return(summary_df)
+}
+
+# List of datasets_final_LL and labels
+datasets_final_LL <- list(
+  "RCP 2.6" = final_LL.sim.annualized.rcp26,
+  "RCP 8.5" = final_LL.sim.annualized.rcp85
+)
+```
+
+## Attiki Results
+```{r}
+# parameters
+target_region <- "Attiki"
+age_groups     <- c(
+  Y20_64 = "20-64",
+  Y65_74 = "65-74",
+  Y75_84 = "75-84",
+  Y_GE85 = "85+"
+)
+start_year  <- 2031
+start_index <- 11  # annualized index for 2030
+
+plots <- lapply(names(age_groups), function(age_group) {
+  df <- lapply(names(datasets_final_LL), function(scenario) {
+    summary_df <- prepare_plot_data(
+      datasets_final_LL[[scenario]],
+      target_region,
+      age_group,
+      start_year,
+      start_index
+    )
+    summary_df$mean    <- exp(summary_df$mean)
+    summary_df$lower   <- exp(summary_df$lower)
+    summary_df$upper   <- exp(summary_df$upper)
+    summary_df$Scenario <- scenario
+    summary_df
+  }) %>% bind_rows()
+  
+  ggplot(df, aes(x = time, color = Scenario)) +
+    geom_line(aes(y = lower),  linetype = "dashed", size = 0.3) +
+    geom_line(aes(y = upper),  linetype = "dashed", size = 0.3) +
+    geom_line(aes(y = mean),   size = 0.6) +
+    scale_color_manual(
+      name   = "Scenario",
+      values = c(
+        "RCP 2.6" = "#007bbd",
+        "RCP 8.5" = "#B7282E"
+      )
+    ) +
+    labs(
+      subtitle = paste("Age group", age_groups[[age_group]]),
+      x        = "Year",
+      y        = "Mortality Rate"
+    ) +
+    theme_minimal() +
+    theme(
+      panel.border       = element_rect(color = "black", fill = NA),
+      panel.grid.major.x = element_blank(),
+      panel.grid.major.y = element_line(color = "gray80"),
+      plot.subtitle      = element_text(size = 14, face = "bold", hjust = 0.5),
+      axis.title         = element_text(size = 12),
+      axis.text          = element_text(size = 10),
+      legend.position    = "bottom",
+      legend.text        = element_text(size = 10),
+      legend.title       = element_text(size = 11)
+    ) +
+    scale_x_continuous(
+      breaks = c(2031, 2036, 2041, 2046),
+      limits = c(start_year, 2046),
+      expand = c(0, 0)
+    ) +
+    scale_y_continuous(
+      expand = expansion(mult = c(0.4, 0.4))
+    )
+})
+
+final_plot <- wrap_plots(plots, ncol = 2) +
+  plot_layout(guides = "collect") &
+  theme(legend.position = "bottom")
+
+print(final_plot)
+
+# Save the final plot
+ggsave(filename = "/Users/jiachengabelmin/Desktop/LC_DLNM/Figures/RCP_Simulation/Overall_annualized/B_DLNM_LL/Attiki_annualized_sim.pdf",
+      plot = final_plot, width = 10, height = 6, units = "in", dpi = 1000)
+```
+
+## Lisbon Results
+```{r}
+# Define target region and age groups
+target_region <- "Lisbon"
+age_groups <- c("Y20_64" = "20-64", "Y65_74" = "65-74", "Y75_84" = "75-84", "Y_GE85" = "85+")
+
+# Set the start year (2030) and starting index (11 for annualized data)
+start_year <- 2031 
+start_index <- 11  # Index corresponding to 2030 for annualized data
+
+# Prepare plots for each age group
+plots <- lapply(names(age_groups), function(age_group) {
+  df <- lapply(names(datasets_final_LL), function(scenario) {
+    summary_df <- prepare_plot_data(
+      datasets_final_LL[[scenario]],
+      target_region,
+      age_group,
+      start_year,
+      start_index
+    )
+    summary_df$mean  <- exp(summary_df$mean)
+    summary_df$lower <- exp(summary_df$lower)
+    summary_df$upper <- exp(summary_df$upper)
+    summary_df$Scenario <- scenario
+    summary_df
+  }) %>% bind_rows()
+  
+  ggplot(df, aes(x = time, color = Scenario)) +
+    geom_line(aes(y = lower),  linetype = "dashed", size = 0.3) +
+    geom_line(aes(y = upper),  linetype = "dashed", size = 0.3) +
+    geom_line(aes(y = mean),   size = 0.4) +
+    scale_color_manual(
+      name   = "Scenario",
+      values = c("RCP 2.6" = "#007bbd", "RCP 8.5" = "#B7282E")
+    ) +
+    labs(
+      subtitle = paste("Age group", age_groups[[age_group]]),
+      x        = "Year",
+      y        = "Mortality Rate"
+    ) +
+    theme_minimal() +
+    theme(
+      panel.border       = element_rect(color = "black", fill = NA),
+      panel.grid.major.x = element_blank(),
+      panel.grid.major.y = element_line(color = "gray80"),
+      plot.subtitle      = element_text(size = 14, face = "bold", hjust = 0.5),
+      axis.title         = element_text(size = 12),
+      axis.text          = element_text(size = 10),
+      legend.position    = "bottom",
+      legend.text        = element_text(size = 10),
+      legend.title       = element_text(size = 11)
+    ) +
+    scale_x_continuous(
+      breaks = c(2031, 2036, 2041, 2046),
+      limits = c(start_year, 2046),
+      expand = c(0, 0)
+    ) +
+    scale_y_continuous(
+      expand = expansion(mult = c(0.4, 0.4))
+    )
+})
+
+# arrange into 2 rows × 2 columns with a shared legend at the bottom
+final_plot <- wrap_plots(plots, ncol = 2) +
+  plot_layout(guides = "collect") &
+  theme(legend.position = "bottom")
+
+print(final_plot)
+
+# Save the final plot
+ggsave(filename = "/Users/jiachengabelmin/Desktop/LC_DLNM/Figures/RCP_Simulation/Overall_annualized/B_DLNM_LL/Lisbon_annualized_sim.pdf",
+      plot = final_plot, width = 10, height = 6, units = "in", dpi = 1000)
+```
+
+## Roma Results
+```{r}
+# Define target region and age groups
+target_region <- "Roma"
+age_groups <- c("Y20_64" = "20-64", "Y65_74" = "65-74", "Y75_84" = "75-84", "Y_GE85" = "85+")
+
+# Set the start year (2030) and starting index (11 for annualized data)
+start_year <- 2031 
+start_index <- 11  # Index corresponding to 2030 for annualized data
+
+# Prepare plots for each age group
+plots <- lapply(names(age_groups), function(age_group) {
+  df <- lapply(names(datasets_final_LL), function(scenario) {
+    summary_df <- prepare_plot_data(
+      datasets_final_LL[[scenario]],
+      target_region,
+      age_group,
+      start_year,
+      start_index
+    )
+    summary_df$mean  <- exp(summary_df$mean)
+    summary_df$lower <- exp(summary_df$lower)
+    summary_df$upper <- exp(summary_df$upper)
+    summary_df$Scenario <- scenario
+    summary_df
+  }) %>% bind_rows()
+  
+  ggplot(df, aes(x = time, color = Scenario)) +
+    geom_line(aes(y = lower),  linetype = "dashed", size = 0.3) +
+    geom_line(aes(y = upper),  linetype = "dashed", size = 0.3) +
+    geom_line(aes(y = mean),   size = 0.4) +
+    scale_color_manual(
+      name   = "Scenario",
+      values = c("RCP 2.6" = "#007bbd", "RCP 8.5" = "#B7282E")
+    ) +
+    labs(
+      subtitle = paste("Age group", age_groups[[age_group]]),
+      x        = "Year",
+      y        = "Mortality Rate"
+    ) +
+    theme_minimal() +
+    theme(
+      panel.border       = element_rect(color = "black", fill = NA),
+      panel.grid.major.x = element_blank(),
+      panel.grid.major.y = element_line(color = "gray80"),
+      plot.subtitle      = element_text(size = 14, face = "bold", hjust = 0.5),
+      axis.title         = element_text(size = 12),
+      axis.text          = element_text(size = 10),
+      legend.position    = "bottom",
+      legend.text        = element_text(size = 10),
+      legend.title       = element_text(size = 11)
+    ) +
+    scale_x_continuous(
+      breaks = c(2031, 2036, 2041, 2046),
+      limits = c(start_year, 2046),
+      expand = c(0, 0)
+    ) + 
+    scale_y_continuous(
+      expand = expansion(mult = c(0.4, 0.4))
+    )
+})
+
+# arrange into 2 rows × 2 columns with a shared legend at the bottom
+final_plot <- wrap_plots(plots, ncol = 2) +
+  plot_layout(guides = "collect") &
+  theme(legend.position = "bottom")
+
+print(final_plot)
+
+# Save the final plot
+ggsave(filename = "/Users/jiachengabelmin/Desktop/LC_DLNM/Figures/RCP_Simulation/Overall_annualized/B_DLNM_LL/Roma_annualized_sim.pdf",
+      plot = final_plot, width = 10, height = 6, units = "in", dpi = 1000)
+```
+

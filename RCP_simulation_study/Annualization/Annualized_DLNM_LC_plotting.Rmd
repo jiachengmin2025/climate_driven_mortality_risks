@@ -1,0 +1,645 @@
+---
+title: "Annualized Data Plotting"
+author: "Jiacheng Min"
+date: "`r Sys.Date()`"
+output: pdf_document
+---
+
+# Load packages
+```{r, warning = FALSE, output = FALSE}
+packages <- c("readxl", "ggplot2", "forecast", "dplyr", "gridExtra", "writexl", 
+              "tseries", "hwwntest", "dlnm", "splines", "ISOweek", "mgcv", 
+              "Metrics", "demography", "seastests", "MTS", "reshape2", "astsa",
+              "MASS", "patchwork")
+lapply(packages, library, character.only = TRUE)
+```
+
+# Load DLNM-LC and DLNM-LL Results
+```{r}
+load("/Users/jiachengabelmin/Desktop/LC_DLNM/Results/Simulated_annualized_mortality_rates/final_LC.sim.annualized.rcp26.RData")
+load("/Users/jiachengabelmin/Desktop/LC_DLNM/Results/Simulated_annualized_mortality_rates/final_LC.sim.annualized.rcp85.RData")
+```
+
+# DLNM-LC Results under Different Scenarios (Functions)
+```{r}
+# Function to prepare data for plotting (filter from 2030 onwards)
+prepare_plot_data <- function(sim_data, region, age_group, start_year, start_index) {
+  # Extract data for the specified region and age group
+  region_data <- sim_data[[region]]
+  age_group_data <- lapply(region_data, function(sim) sim[[age_group]])
+  
+  # Combine all simulations into a matrix
+  sim_matrix <- do.call(rbind, age_group_data)
+  sim_matrix <- sim_matrix[, start_index:ncol(sim_matrix)]  # Filter data from start_index onward
+  
+  # Calculate mean and confidence intervals
+  summary_df <- data.frame(
+    time = seq(start_year, start_year + ncol(sim_matrix) - 1),  # Generate yearly time points
+    mean = colMeans(sim_matrix),
+    lower = apply(sim_matrix, 2, quantile, probs = 0.025),
+    upper = apply(sim_matrix, 2, quantile, probs = 0.975)
+  )
+  return(summary_df)
+}
+
+# List of datasets_final_LC and labels
+datasets_final_LC <- list(
+  "RCP 2.6" = final_LC.sim.annualized.rcp26,
+  #"RCP 4.5" = final_LC.sim.annualized.rcp45,
+  #"RCP 6.0" = final_LC.sim.annualized.rcp60,
+  "RCP 8.5" = final_LC.sim.annualized.rcp85
+)
+
+```
+
+## Attiki Results
+```{r}
+# Define target region and age groups
+target_region <- "Attiki"
+age_groups <- c("Y20_64" = "20-64", "Y65_74" = "65-74", "Y75_84" = "75-84", "Y_GE85" = "85+")
+
+# Set the start year (2030) and starting index (11 for annualized data)
+start_year <- 2031
+start_index <- 11  # Index corresponding to 2030 for annualized data
+
+# Prepare plots for each age group
+plots <- lapply(names(age_groups), function(age_group) {
+  # Prepare data for each scenario
+  plot_data <- lapply(names(datasets_final_LC), function(label) {
+    # Use the updated prepare_plot_data function
+    summary_df <- prepare_plot_data(datasets_final_LC[[label]], target_region, age_group, start_year, start_index)
+    # Restore data from log-transformed values
+    summary_df$mean <- exp(summary_df$mean)
+    summary_df$lower <- exp(summary_df$lower)
+    summary_df$upper <- exp(summary_df$upper)
+    summary_df$scenario <- label  # Add scenario label for plotting
+    return(summary_df)
+  })
+  
+  # Combine all scenarios into a single data frame
+  combined_plot_data <- do.call(rbind, plot_data)
+  
+  # Generate the plot
+  ggplot(combined_plot_data, aes(x = time, group = scenario)) +
+    # Draw dashed lines for the lower and upper CI boundaries instead of a ribbon
+    geom_line(aes(y = lower, color = scenario), linetype = "dashed", size = 0.5) +
+    geom_line(aes(y = upper, color = scenario), linetype = "dashed", size = 0.5) +
+    # Draw the mean line
+    geom_line(aes(y = mean, color = scenario), size = 0.5) +
+    # Labels and theme
+    labs(
+      title = NULL,
+      subtitle = paste("Age group", age_groups[[age_group]]),
+      x = "Year",
+      y = "Mortality Rate",  # Update y-axis label to reflect restored values
+      color = "Scenario",
+      fill = "Scenario"
+    ) +
+    scale_color_manual(values = c("RCP 2.6" = "#007bbd", 
+                                  "RCP 4.5" = "#38bd48", 
+                                  "RCP 6.0" = "#FF7F00", 
+                                  "RCP 8.5" = "#B7282E")) +
+    scale_fill_manual(values = c("RCP 2.6" = "#B3D1F5", 
+                                 "RCP 4.5" = "#83d081", 
+                                 "RCP 6.0" = "#FFC185", 
+                                 "RCP 8.5" = "#FFE3D9")) +
+    theme_minimal() +
+    theme(
+      panel.border = element_rect(color = "black", fill = NA),
+      panel.grid.major = element_blank(),  # Remove major grid lines
+      panel.grid.minor = element_blank(),  # Remove minor grid lines
+      plot.margin = margin(5, 5, 5, 5),
+      axis.text.x = element_text(hjust = 0.5),
+      axis.ticks = element_line(color = "black"),
+      legend.title = element_blank(),
+      legend.text = element_text(size = 10),
+      plot.subtitle = element_text(size = 10, face = "bold", hjust = 0.5),  # Center the subtitle
+      legend.position = "bottom",  # Move legend to the bottom
+      legend.direction = "horizontal",  # Arrange legend elements in a row
+      legend.box = "horizontal"  # Ensure elements are placed in a single row
+    ) +
+    scale_x_continuous(
+      limits = c(start_year, 2045),  # Set x-axis limits from 2031 to 2045
+      breaks = c(2031, 2035, 2040, 2045),  # Set x-axis ticks to 2031, 2035, 2040, 2045
+      expand = c(0, 0)  # Remove extra padding
+    ) +
+    scale_y_continuous()
+})
+
+# Combine all age group plots
+Attiki_plot <- wrap_plots(plots, ncol = 1) +
+  plot_layout(guides = "collect") +  # Collect legends from subplots
+  plot_annotation(
+    #title = "Simulated Annualized Mortality Rates via DLNM-LC (Attica)",
+    theme = theme(
+      plot.title = element_text(size = 12, face = "bold", hjust = 0.5),  # Center the title
+      legend.position = "bottom",  # Move legend to the bottom
+      legend.direction = "horizontal"  # Arrange legend items horizontally
+    )
+  )
+
+# Display the final plot
+Attiki_plot
+# Save the final plot
+ggsave(filename = "/Users/jiachengabelmin/Desktop/LC_DLNM/Figures/RCP_Simulation/Overall_annualized/B_DLNM_LC/Attiki_all_scenarios_annualized_line.pdf",
+       plot = Attiki_plot, width = 6, height = 10, units = "in", dpi = 1000)
+```
+
+## Lisbon Results
+```{r}
+# Define target region and age groups
+target_region <- "Lisbon"
+age_groups <- c("Y20_64" = "20-64", "Y65_74" = "65-74", "Y75_84" = "75-84", "Y_GE85" = "85+")
+
+# Set the start year (2030) and starting index (11 for annualized data)
+start_year <- 2031
+start_index <- 11  # Index corresponding to 2030 for annualized data
+
+# Prepare plots for each age group
+plots <- lapply(names(age_groups), function(age_group) {
+  # Prepare data for each scenario
+  plot_data <- lapply(names(datasets_final_LC), function(label) {
+    # Use the updated prepare_plot_data function
+    summary_df <- prepare_plot_data(datasets_final_LC[[label]], target_region, age_group, start_year, start_index)
+    # Restore data from log-transformed values
+    summary_df$mean <- exp(summary_df$mean)
+    summary_df$lower <- exp(summary_df$lower)
+    summary_df$upper <- exp(summary_df$upper)
+    summary_df$scenario <- label  # Add scenario label for plotting
+    return(summary_df)
+  })
+  
+  # Combine all scenarios into a single data frame
+  combined_plot_data <- do.call(rbind, plot_data)
+  
+  # Generate the plot
+  ggplot(combined_plot_data, aes(x = time, group = scenario)) +
+    # Draw dashed lines for the lower and upper CI boundaries instead of a ribbon
+    geom_line(aes(y = lower, color = scenario), linetype = "dashed", size = 0.5) +
+    geom_line(aes(y = upper, color = scenario), linetype = "dashed", size = 0.5) +
+    # Draw the mean line
+    geom_line(aes(y = mean, color = scenario), size = 0.5) +
+    # Labels and theme
+    labs(
+      title = NULL,
+      subtitle = paste("Age group", age_groups[[age_group]]),
+      x = "Year",
+      y = "Mortality Rate",  # Update y-axis label to reflect restored values
+      color = "Scenario",
+      fill = "Scenario"
+    ) +
+    scale_color_manual(values = c("RCP 2.6" = "#007bbd", 
+                                  "RCP 4.5" = "#38bd48", 
+                                  "RCP 6.0" = "#FF7F00", 
+                                  "RCP 8.5" = "#B7282E")) +
+    scale_fill_manual(values = c("RCP 2.6" = "#B3D1F5", 
+                                 "RCP 4.5" = "#83d081", 
+                                 "RCP 6.0" = "#FFC185", 
+                                 "RCP 8.5" = "#FFE3D9")) +
+    theme_minimal() +
+    theme(
+      panel.border = element_rect(color = "black", fill = NA),
+      panel.grid.major = element_blank(),  # Remove major grid lines
+      panel.grid.minor = element_blank(),  # Remove minor grid lines
+      plot.margin = margin(5, 5, 5, 5),
+      axis.text.x = element_text(hjust = 0.5),
+      axis.ticks = element_line(color = "black"),
+      legend.title = element_blank(),
+      legend.text = element_text(size = 10),
+      plot.subtitle = element_text(size = 10, face = "bold", hjust = 0.5),  # Center the subtitle
+      legend.position = "bottom",  # Move legend to the bottom
+      legend.direction = "horizontal",  # Arrange legend elements in a row
+      legend.box = "horizontal"  # Ensure elements are placed in a single row
+    ) +
+    scale_x_continuous(
+      limits = c(start_year, 2045),  # Set x-axis limits from 2031 to 2045
+      breaks = c(2031, 2035, 2040, 2045),  # Set x-axis ticks to 2031, 2035, 2040, 2045
+      expand = c(0, 0)  # Remove extra padding
+    ) +
+    scale_y_continuous()
+})
+
+# Combine all age group plots
+Lisbon_plot <- wrap_plots(plots, ncol = 1) +
+  plot_layout(guides = "collect") +  # Collect legends from subplots
+  plot_annotation(
+    #title = "Simulated Annualized Mortality Rates via DLNM-LC (Lisbon)",
+    theme = theme(
+      plot.title = element_text(size = 12, face = "bold", hjust = 0.5),  # Center the title
+      legend.position = "bottom",  # Move legend to the bottom
+      legend.direction = "horizontal"  # Arrange legend items horizontally
+    )
+  )
+
+# Display the final plot
+Lisbon_plot
+# Save the final plot
+ggsave(filename = "/Users/jiachengabelmin/Desktop/LC_DLNM/Figures/RCP_Simulation/Overall_annualized/B_DLNM_LC/Lisbon_all_scenarios_annualized_line.pdf",
+       plot = Lisbon_plot, width = 6, height = 10, units = "in", dpi = 1000)
+```
+
+## Roma Results
+```{r}
+# Define target region and age groups
+target_region <- "Roma"
+age_groups <- c("Y20_64" = "20-64", "Y65_74" = "65-74", "Y75_84" = "75-84", "Y_GE85" = "85+")
+
+# Set the start year (2030) and starting index (11 for annualized data)
+start_year <- 2031
+start_index <- 11  # Index corresponding to 2030 for annualized data
+
+# Prepare plots for each age group
+plots <- lapply(names(age_groups), function(age_group) {
+  # Prepare data for each scenario
+  plot_data <- lapply(names(datasets_final_LC), function(label) {
+    # Use the updated prepare_plot_data function
+    summary_df <- prepare_plot_data(datasets_final_LC[[label]], target_region, age_group, start_year, start_index)
+    # Restore data from log-transformed values
+    summary_df$mean <- exp(summary_df$mean)
+    summary_df$lower <- exp(summary_df$lower)
+    summary_df$upper <- exp(summary_df$upper)
+    summary_df$scenario <- label  # Add scenario label for plotting
+    return(summary_df)
+  })
+  
+  # Combine all scenarios into a single data frame
+  combined_plot_data <- do.call(rbind, plot_data)
+  
+  # Generate the plot
+  ggplot(combined_plot_data, aes(x = time, group = scenario)) +
+    # Draw dashed lines for the lower and upper CI boundaries instead of a ribbon
+    geom_line(aes(y = lower, color = scenario), linetype = "dashed", size = 0.5) +
+    geom_line(aes(y = upper, color = scenario), linetype = "dashed", size = 0.5) +
+    # Draw the mean line
+    geom_line(aes(y = mean, color = scenario), size = 0.5) +
+    # Labels and theme
+    labs(
+      title = NULL,
+      subtitle = paste("Age group", age_groups[[age_group]]),
+      x = "Year",
+      y = "Mortality Rate",  # Update y-axis label to reflect restored values
+      color = "Scenario",
+      fill = "Scenario"
+    ) +
+    scale_color_manual(values = c("RCP 2.6" = "#007bbd", 
+                                  "RCP 4.5" = "#38bd48", 
+                                  "RCP 6.0" = "#FF7F00", 
+                                  "RCP 8.5" = "#B7282E")) +
+    scale_fill_manual(values = c("RCP 2.6" = "#B3D1F5", 
+                                 "RCP 4.5" = "#83d081", 
+                                 "RCP 6.0" = "#FFC185", 
+                                 "RCP 8.5" = "#FFE3D9")) +
+    theme_minimal() +
+    theme(
+      panel.border = element_rect(color = "black", fill = NA),
+      panel.grid.major = element_blank(),  # Remove major grid lines
+      panel.grid.minor = element_blank(),  # Remove minor grid lines
+      plot.margin = margin(5, 5, 5, 5),
+      axis.text.x = element_text(hjust = 0.5),
+      axis.ticks = element_line(color = "black"),
+      legend.title = element_blank(),
+      legend.text = element_text(size = 10),
+      plot.subtitle = element_text(size = 10, face = "bold", hjust = 0.5),  # Center the subtitle
+      legend.position = "bottom",  # Move legend to the bottom
+      legend.direction = "horizontal",  # Arrange legend elements in a row
+      legend.box = "horizontal"  # Ensure elements are placed in a single row
+    ) +
+    scale_x_continuous(
+      limits = c(start_year, 2045),  # Set x-axis limits from 2031 to 2045
+      breaks = c(2031, 2035, 2040, 2045),  # Set x-axis ticks to 2031, 2035, 2040, 2045
+      expand = c(0, 0)  # Remove extra padding
+    ) +
+    scale_y_continuous()
+})
+
+# Combine all age group plots
+Roma_plot <- wrap_plots(plots, ncol = 1) +
+  plot_layout(guides = "collect") +  # Collect legends from subplots
+  plot_annotation(
+    #title = "Simulated Annualized Mortality Rates via DLNM-LL (Rome)",
+    theme = theme(
+      plot.title = element_text(size = 12, face = "bold", hjust = 0.5),  # Center the title
+      legend.position = "bottom",  # Move legend to the bottom
+      legend.direction = "horizontal"  # Arrange legend items horizontally
+    )
+  )
+
+# Display the final plot
+Roma_plot
+# Save the final plot
+ggsave(filename = "/Users/jiachengabelmin/Desktop/LC_DLNM/Figures/RCP_Simulation/Overall_annualized/B_DLNM_LC/Roma_all_scenarios_annualized_line.pdf",
+       plot = Roma_plot, width = 6, height = 10, units = "in", dpi = 1000)
+```
+
+# DLNM-LL Results under Different Scenarios (Functions)
+```{r}
+# Function to prepare data for plotting (with filtering by start_index)
+prepare_plot_data <- function(sim_data, region, age_group, start_year, start_index) {
+  # Extract data for the specified region and age group
+  region_data <- sim_data[[region]]
+  age_group_data <- lapply(region_data, function(sim) sim[[age_group]])
+  
+  # Combine all simulations into a matrix
+  sim_matrix <- do.call(rbind, age_group_data)
+  sim_matrix <- sim_matrix[, start_index:ncol(sim_matrix)]  # Filter data from start_index onward
+  
+  # Calculate mean and confidence intervals
+  summary_df <- data.frame(
+    time = seq(start_year, start_year + ncol(sim_matrix) - 1),  # Generate yearly time points
+    mean = colMeans(sim_matrix),
+    lower = apply(sim_matrix, 2, quantile, probs = 0.025),
+    upper = apply(sim_matrix, 2, quantile, probs = 0.975)
+  )
+  return(summary_df)
+}
+
+# List of datasets_final_LL and labels
+datasets_final_LL <- list(
+  "RCP 2.6" = final_LL.sim.annualized.rcp26,
+  #"RCP 4.5" = final_LL.sim.annualized.rcp45,
+  #"RCP 6.0" = final_LL.sim.annualized.rcp60,
+  "RCP 8.5" = final_LL.sim.annualized.rcp85
+)
+```
+
+## Attiki Results
+```{r}
+# Define target region and age groups
+target_region <- "Attiki"
+age_groups <- c("Y20_64" = "20-64", "Y65_74" = "65-74", "Y75_84" = "75-84", "Y_GE85" = "85+")
+
+# Set the start year (2030) and starting index (11 for annualized data)
+start_year <- 2031 
+start_index <- 11  # Index corresponding to 2030 for annualized data
+
+# Prepare plots for each age group
+plots <- lapply(names(age_groups), function(age_group) {
+  # Prepare data for each scenario using the updated prepare_plot_data function
+  plot_data <- lapply(names(datasets_final_LL), function(label) {
+    summary_df <- prepare_plot_data(datasets_final_LL[[label]], target_region, age_group, start_year, start_index)
+    # Restore the data from log-transformed values
+    summary_df$mean <- exp(summary_df$mean)
+    summary_df$lower <- exp(summary_df$lower)
+    summary_df$upper <- exp(summary_df$upper)
+    summary_df$scenario <- label  # Add scenario label for plotting
+    return(summary_df)
+  })
+  
+  # Combine data from all scenarios into a single data frame
+  combined_plot_data <- do.call(rbind, plot_data)
+  
+  # Generate the plot
+  ggplot(combined_plot_data, aes(x = time, group = scenario)) +
+    # Draw dashed lines for the lower and upper confidence interval boundaries
+    geom_line(aes(y = lower, color = scenario), linetype = "dashed", size = 0.5) +
+    geom_line(aes(y = upper, color = scenario), linetype = "dashed", size = 0.5) +
+    # Draw the mean line
+    geom_line(aes(y = mean, color = scenario), size = 0.5) +
+    # Set labels and legends
+    labs(
+      title = NULL,
+      subtitle = paste("Age group", age_groups[[age_group]]),
+      x = "Year",
+      y = "Mortality Rate",  # Reflects restored values
+      color = "Scenario",
+      fill = "Scenario"
+    ) +
+    # Manually set colors for each scenario
+    scale_color_manual(values = c("RCP 2.6" = "#007bbd", 
+                                  #"RCP 4.5" = "#38bd48", 
+                                  #"RCP 6.0" = "#FF7F00", 
+                                  "RCP 8.5" = "#B7282E")) +
+    scale_fill_manual(values = c("RCP 2.6" = "#B3D1F5", 
+                                 #"RCP 4.5" = "#83d081", 
+                                 #"RCP 6.0" = "#FFC185", 
+                                 "RCP 8.5" = "#FFE3D9")) +
+    theme_minimal() +
+    theme(
+      panel.border = element_rect(color = "black", fill = NA),
+      panel.grid.major = element_blank(),  # Remove major grid lines
+      panel.grid.minor = element_blank(),  # Remove minor grid lines
+      plot.margin = margin(5, 5, 5, 5),
+      axis.text.x = element_text(hjust = 0.5),
+      axis.ticks = element_line(color = "black"),
+      legend.title = element_blank(),
+      legend.text = element_text(size = 10),
+      plot.subtitle = element_text(size = 10, face = "bold", hjust = 0.5),  # Center the subtitle
+      legend.position = "bottom",  # Move legend to the bottom
+      legend.direction = "horizontal",  # Arrange legend elements in a row
+      legend.box = "horizontal"  # Ensure elements are placed in a single row
+    ) +
+    scale_x_continuous(
+      limits = c(start_year, 2046),  # Set x-axis limits from 2031 to 2045
+      #breaks = c(2031, 2035, 2040, 2045),  # Set x-axis ticks to 2031, 2035, 2040, 2045
+      expand = c(0, 0)  # Remove extra padding
+    ) +
+    scale_y_continuous()
+})
+
+# Combine all age group plots
+Attiki_plot <- wrap_plots(plots, ncol = 1) +
+  plot_layout(guides = "collect") +  # Collect legends from subplots
+  plot_annotation(
+    #title = "Simulated Annualized Mortality Rates via DLNM-LL (Attica)",
+    theme = theme(
+      plot.title = element_text(size = 12, face = "bold", hjust = 0.5),  # Center the title
+      legend.position = "bottom",  # Move legend to the bottom
+      legend.direction = "horizontal"  # Arrange legend items horizontally
+    )
+  )
+
+# Display the final plot
+Attiki_plot
+
+# Save the final plot
+ggsave(filename = "/Users/jiachengabelmin/Desktop/LC_DLNM/Figures/RCP_Simulation/Overall_annualized/B_DLNM_LL/Attiki_all_scenarios_annualized_line.pdf",
+      plot = Attiki_plot, width = 6, height = 10, units = "in", dpi = 1000)
+```
+
+## Lisbon Results
+```{r}
+# Define target region and age groups
+target_region <- "Lisbon"
+age_groups <- c("Y20_64" = "20-64", "Y65_74" = "65-74", "Y75_84" = "75-84", "Y_GE85" = "85+")
+
+# Set the start year (2030) and starting index (11 for annualized data)
+start_year <- 2031 
+start_index <- 11  # Index corresponding to 2030 for annualized data
+
+# Prepare plots for each age group
+plots <- lapply(names(age_groups), function(age_group) {
+  # Prepare data for each scenario using the updated prepare_plot_data function
+  plot_data <- lapply(names(datasets_final_LL), function(label) {
+    summary_df <- prepare_plot_data(datasets_final_LL[[label]], target_region, age_group, start_year, start_index)
+    # Restore the data from log-transformed values
+    summary_df$mean <- exp(summary_df$mean)
+    summary_df$lower <- exp(summary_df$lower)
+    summary_df$upper <- exp(summary_df$upper)
+    summary_df$scenario <- label  # Add scenario label for plotting
+    return(summary_df)
+  })
+  
+  # Combine data from all scenarios into a single data frame
+  combined_plot_data <- do.call(rbind, plot_data)
+  
+  # Generate the plot
+  ggplot(combined_plot_data, aes(x = time, group = scenario)) +
+    # Draw dashed lines for the lower and upper confidence interval boundaries
+    geom_line(aes(y = lower, color = scenario), linetype = "dashed", size = 0.5) +
+    geom_line(aes(y = upper, color = scenario), linetype = "dashed", size = 0.5) +
+    # Draw the mean line
+    geom_line(aes(y = mean, color = scenario), size = 0.5) +
+    # Set labels and legends
+    labs(
+      title = NULL,
+      subtitle = paste("Age group", age_groups[[age_group]]),
+      x = "Year",
+      y = "Mortality Rate",  # Reflects restored values
+      color = "Scenario",
+      fill = "Scenario"
+    ) +
+    # Manually set colors for each scenario
+    scale_color_manual(values = c("RCP 2.6" = "#007bbd", 
+                                  #"RCP 4.5" = "#38bd48", 
+                                  #"RCP 6.0" = "#FF7F00", 
+                                  "RCP 8.5" = "#B7282E")) +
+    scale_fill_manual(values = c("RCP 2.6" = "#B3D1F5", 
+                                 #"RCP 4.5" = "#83d081", 
+                                 #"RCP 6.0" = "#FFC185", 
+                                 "RCP 8.5" = "#FFE3D9")) +
+    theme_minimal() +
+    theme(
+      panel.border = element_rect(color = "black", fill = NA),
+      panel.grid.major = element_blank(),  # Remove major grid lines
+      panel.grid.minor = element_blank(),  # Remove minor grid lines
+      plot.margin = margin(5, 5, 5, 5),
+      axis.text.x = element_text(hjust = 0.5),
+      axis.ticks = element_line(color = "black"),
+      legend.title = element_blank(),
+      legend.text = element_text(size = 10),
+      plot.subtitle = element_text(size = 10, face = "bold", hjust = 0.5),  # Center the subtitle
+      legend.position = "bottom",  # Move legend to the bottom
+      legend.direction = "horizontal",  # Arrange legend elements in a row
+      legend.box = "horizontal"  # Ensure elements are placed in a single row
+    ) +
+    scale_x_continuous(
+      limits = c(start_year, 2046),  # Set x-axis limits from 2031 to 2045
+      #breaks = c(2031, 2035, 2040, 2045),  # Set x-axis ticks to 2031, 2035, 2040, 2045
+      expand = c(0, 0)  # Remove extra padding
+    ) +
+    scale_y_continuous()
+})
+
+# Combine all age group plots
+Lisbon_plot <- wrap_plots(plots, ncol = 1) +
+  plot_layout(guides = "collect") +  # Collect legends from subplots
+  plot_annotation(
+    #title = "Simulated Annualized Mortality Rates via DLNM-LL (Lisbon)",
+    theme = theme(
+      plot.title = element_text(size = 12, face = "bold", hjust = 0.5),  # Center the title
+      legend.position = "bottom",  # Move legend to the bottom
+      legend.direction = "horizontal"  # Arrange legend items horizontally
+    )
+  )
+
+# Display the final plot
+Lisbon_plot
+
+# Save the final plot
+ggsave(filename = "/Users/jiachengabelmin/Desktop/LC_DLNM/Figures/RCP_Simulation/Overall_annualized/B_DLNM_LL/Lisbon_all_scenarios_annualized_line.pdf",
+      plot = Lisbon_plot, width = 6, height = 10, units = "in", dpi = 1000)
+```
+
+## Roma Results
+```{r}
+# Define target region and age groups
+target_region <- "Roma"
+age_groups <- c("Y20_64" = "20-64", "Y65_74" = "65-74", "Y75_84" = "75-84", "Y_GE85" = "85+")
+
+# Set the start year (2030) and starting index (11 for annualized data)
+start_year <- 2031 
+start_index <- 11  # Index corresponding to 2030 for annualized data
+
+# Prepare plots for each age group
+plots <- lapply(names(age_groups), function(age_group) {
+  # Prepare data for each scenario using the updated prepare_plot_data function
+  plot_data <- lapply(names(datasets_final_LL), function(label) {
+    summary_df <- prepare_plot_data(datasets_final_LL[[label]], target_region, age_group, start_year, start_index)
+    # Restore the data from log-transformed values
+    summary_df$mean <- exp(summary_df$mean)
+    summary_df$lower <- exp(summary_df$lower)
+    summary_df$upper <- exp(summary_df$upper)
+    summary_df$scenario <- label  # Add scenario label for plotting
+    return(summary_df)
+  })
+  
+  # Combine data from all scenarios into a single data frame
+  combined_plot_data <- do.call(rbind, plot_data)
+  
+  # Generate the plot
+  ggplot(combined_plot_data, aes(x = time, group = scenario)) +
+    # Draw dashed lines for the lower and upper confidence interval boundaries
+    geom_line(aes(y = lower, color = scenario), linetype = "dashed", size = 0.5) +
+    geom_line(aes(y = upper, color = scenario), linetype = "dashed", size = 0.5) +
+    # Draw the mean line
+    geom_line(aes(y = mean, color = scenario), size = 0.5) +
+    # Set labels and legends
+    labs(
+      title = NULL,
+      subtitle = paste("Age group", age_groups[[age_group]]),
+      x = "Year",
+      y = "Mortality Rate",  # Reflects restored values
+      color = "Scenario",
+      fill = "Scenario"
+    ) +
+    # Manually set colors for each scenario
+    scale_color_manual(values = c("RCP 2.6" = "#007bbd", 
+                                  #"RCP 4.5" = "#38bd48", 
+                                  #"RCP 6.0" = "#FF7F00", 
+                                  "RCP 8.5" = "#B7282E")) +
+    scale_fill_manual(values = c("RCP 2.6" = "#B3D1F5", 
+                                 #"RCP 4.5" = "#83d081", 
+                                 #"RCP 6.0" = "#FFC185", 
+                                 "RCP 8.5" = "#FFE3D9")) +
+    theme_minimal() +
+    theme(
+      panel.border = element_rect(color = "black", fill = NA),
+      panel.grid.major = element_blank(),  # Remove major grid lines
+      panel.grid.minor = element_blank(),  # Remove minor grid lines
+      plot.margin = margin(5, 5, 5, 5),
+      axis.text.x = element_text(hjust = 0.5),
+      axis.ticks = element_line(color = "black"),
+      legend.title = element_blank(),
+      legend.text = element_text(size = 10),
+      plot.subtitle = element_text(size = 10, face = "bold", hjust = 0.5),  # Center the subtitle
+      legend.position = "bottom",  # Move legend to the bottom
+      legend.direction = "horizontal",  # Arrange legend elements in a row
+      legend.box = "horizontal"  # Ensure elements are placed in a single row
+    ) +
+    scale_x_continuous(
+      limits = c(start_year, 2046),  # Set x-axis limits from 2031 to 2045
+      #breaks = c(2031, 2035, 2040, 2045),  # Set x-axis ticks to 2031, 2035, 2040, 2045
+      expand = c(0, 0)  # Remove extra padding
+    ) +
+    scale_y_continuous()
+})
+
+# Combine all age group plots
+Roma_plot <- wrap_plots(plots, ncol = 1) +
+  plot_layout(guides = "collect") +  # Collect legends from subplots
+  plot_annotation(
+    #title = "Simulated Annualized Mortality Rates via DLNM-LL (Rome)",
+    theme = theme(
+      plot.title = element_text(size = 12, face = "bold", hjust = 0.5),  # Center the title
+      legend.position = "bottom",  # Move legend to the bottom
+      legend.direction = "horizontal"  # Arrange legend items horizontally
+    )
+  )
+
+# Display the final plot
+Roma_plot
+
+# Save the final plot
+ggsave(filename = "/Users/jiachengabelmin/Desktop/LC_DLNM/Figures/RCP_Simulation/Overall_annualized/B_DLNM_LL/Roma_all_scenarios_annualized_line.pdf",
+      plot = Roma_plot, width = 6, height = 10, units = "in", dpi = 1000)
+```
