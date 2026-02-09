@@ -12,3 +12,4 @@ The following packages are required to finish the experiments.
 All packages are available on CRAN.
 
 ## Overview
+- `Data` folder contains the raw death count data, population data, historical UTCI data, and simulated UTCI data (RCP 2.6 and RCP 8.5).
