@@ -6,8 +6,10 @@ This repository contains the mortality dataset, UTCI dataset and necessary code 
 
 ## Package Requirements
 The following packages are required to finish the experiments.
-- `dlnm`
-- `abcd`
+- `readxl`, `writexl`, `dplyr`, `tidyr`, `reshape2`, `zoo`, `ISOweek` for data imputation.
+- `dlnm`, `splines`, `forecast`, `astsa`, `MTS`, `mgcv`, `demography` for modelling DLNM components.
+- `seastests`, `tseries`, `nortest`, `hwwntest` for model diagnostics and statistical tests.
+- `ggplot2`, `patchwork`, `gridExtra`, `ggpubr`, `scales` for visualizations.
 
 All packages are available on CRAN.
 
