@@ -15,5 +15,5 @@ All packages are available on CRAN.
 
 ## Overview
 - `Code` folder contains all the code to reproduce the results.
-- `Data` folder contains the raw death count data, population data, historical UTCI data, and scenario-based UTCI data (RCP 2.6 and RCP 8.5).
+- `Data` folder contains the raw death count data, population data, historical UTCI data, and scenario-based UTCI data (RCP2.6 and RCP8.5).
 - `Figures` folder includes all the produced figures.
