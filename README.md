@@ -36,7 +36,7 @@ Rscript Code/Crossbasis_matrix/cb_Lisbon.R
 Rscript Code/Crossbasis_matrix/cb_Roma.R
 ```
 
-- Use the following code to run DLNM--LC and DLNM--LL model. In the expanding window cross-validation, the mean absolute error (MAE) for LC, LL, DLNM--LC, and DLNM--LL can be computed and compared.
+- Use the following code to run DLNM--LC and DLNM--LL model. In the expanding window cross-validation, the mean absolute error (MAE) for LC, LL, DLNM--LC, and DLNM--LL can be computed.
 
 ```shell
 Rscript Code/Model/DLNM-LC-Attica.R
