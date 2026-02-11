@@ -20,6 +20,12 @@ All packages are available on CRAN.
 - `Results` folder is not shown on Github due to the large size. The folder is available on <a href="https://drive.google.com/drive/folders/1MTxlj_AZO0nfjLoOq5icurK3x4g1YJEW?usp=sharing">Google Drive</a>. The folder contains necessary `.RData` files for mortality projections under RCP scenarios. These `.RData` files can also be reproduced via R scripts in `Code/RCP_simulation_study`.
 
 ## Empirical results
+- Use the following code to visualize mortality rates and UTCI across regions and age groups.
+
+```shell
+Rscript Code/Historical_data_aggregation/Historical_data.R
+```
+
 - Use the following code to generate mixed-frequency cross-basis matrices across regions.
 
 ```shell
