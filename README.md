@@ -28,7 +28,7 @@ Rscript Code/Model/DLNM-LC-Lisbon.R
 Rscript Code/Model/DLNM-LC-Rome.R
 Rscript Code/Model/DLNM-LL.R
 ```
-- Use the following code to calibrate DLNM--LC and DLNM--LL model. The plot of overall cumulative effect of UTCI, lagged effect of UTCI, and time-varying factors in both models can be generated.
+- Use the following code to calibrate DLNM--LC and DLNM--LL model. The plot of overall cumulative effects, lagged effects, and time-varying factors are generated.
 
 ```shell
 Rscript Code/Calibration/DLNM-LC-Calibration.R
