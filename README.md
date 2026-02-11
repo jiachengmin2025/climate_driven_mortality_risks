@@ -52,7 +52,7 @@ Rscript Code/Calibration/DLNM-LL-Calibration.R
 Rscript Code/Calibration/time-varying-factors.R
 ```
 
-- Use the following code to **run time spline DLNM**. In the expanding window cross-validation, the mean absolute error (MAE) can be computed.
+- Use the following code to run **time spline DLNM**. In the expanding window cross-validation, the mean absolute error (MAE) can be computed.
 
 ```shell
 Rscript Code/Model-comparison/time-spline-DLNM-Attiki.R
