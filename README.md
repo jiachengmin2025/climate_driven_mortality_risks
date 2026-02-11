@@ -92,4 +92,4 @@ Rscript Code/RCP_simulation_study/Annualized_DLNM_LL_plotting.R
 ```
 
 ## References
-Min, J., Li, H., Nagler, T., & Li, S. (2025). *Assessing Climate-Driven Mortality Risk: A Stochastic Approach with Distributed Lag Non-Linear Models. arXiv preprint https://arxiv.org/abs/2506.00561.
+Min, J., Li, H., Nagler, T., & Li, S. (2025). *Assessing Climate-Driven Mortality Risk: A Stochastic Approach with Distributed Lag Non-Linear Models*. arXiv preprint https://arxiv.org/abs/2506.00561.
