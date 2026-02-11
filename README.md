@@ -17,5 +17,5 @@ All packages are available on CRAN.
 - `Code` folder contains all the code to reproduce the results.
 - `Data` folder contains the raw death count data, population data, historical UTCI data, and scenario-based UTCI data (RCP2.6 and RCP8.5).
 - `Figures` folder includes all the produced figures.
-- `Results` folder is not shown on Github due to the large size. The folder is available on <a href="https://drive.google.com/drive/folders/1odrwlroH2OGTVspwttLGPpHPfTAtNZRC?usp=drive_link">Google Drive</a>. The folder contains necessary .RData files for mortality projections under RCP scenarios. These .RData files can also be reproduced via R scripts in `Code/RCP_simulation_study`.
+- `Results` folder is not shown on Github due to the large size. The folder is available on <a href="https://drive.google.com/drive/folders/1MTxlj_AZO0nfjLoOq5icurK3x4g1YJEW?usp=sharing">Google Drive</a>. The folder contains necessary .RData files for mortality projections under RCP scenarios. These .RData files can also be reproduced via R scripts in `Code/RCP_simulation_study`.
 
