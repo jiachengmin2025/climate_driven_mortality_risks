@@ -59,7 +59,7 @@ Rscript Code/Model-comparison/time-spline-DLNM-Attiki.R
 Rscript Code/Model-comparison/time-spline-DLNM-Lisbon.R
 Rscript Code/Model-comparison/time-spline-DLNM-Roma.R
 ```
-## Simulation study under RCP scenarios
+## Mortlaity projections under RCP scenarios
 - Use the following code to prepare future generated UTCI data under RCP2.6 and RCP8.5.
 
 ```shell
@@ -90,3 +90,6 @@ Rscript Code/RCP_simulation_study/Annualization_data_processing.R
 Rscript Code/RCP_simulation_study/Annualized_DLNM_LC_plotting.R
 Rscript Code/RCP_simulation_study/Annualized_DLNM_LL_plotting.R
 ```
+
+## References
+Min, J., Li, H., Nagler, T., & Li, S. (2025). *Assessing Climate-Driven Mortality Risk: A Stochastic Approach with Distributed Lag Non-Linear Models. arXiv preprint. https://arxiv.org/abs/2506.00561.
