@@ -20,6 +20,14 @@ All packages are available on CRAN.
 - `Results` folder is not shown on Github due to the large size. The folder is available on <a href="https://drive.google.com/drive/folders/1MTxlj_AZO0nfjLoOq5icurK3x4g1YJEW?usp=sharing">Google Drive</a>. The folder contains necessary `.RData` files for mortality projections under RCP scenarios. These `.RData` files can also be reproduced via R scripts in `Code/RCP_simulation_study`.
 
 ## Empirical results
+- Use the following code to generate mixed-frequency cross-basis matrices across regions.
+
+```shell
+Rscript Code/Crossbasis_matrix/cb_Attiki.R
+Rscript Code/Crossbasis_matrix/cb_Lisbon.R
+Rscript Code/Crossbasis_matrix/cb_Roma.R
+```
+
 - Use the following code to run DLNM--LC and DLNM--LL model. In the expanding window cross-validation, the mean absolute error (MAE) for LC, LL, DLNM--LC, and DLNM--LL can be computed and compared.
 
 ```shell
