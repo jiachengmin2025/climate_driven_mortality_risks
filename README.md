@@ -59,5 +59,25 @@ Rscript Code/Model-comparison/time-spline-DLNM-Attiki.R
 Rscript Code/Model-comparison/time-spline-DLNM-Lisbon.R
 Rscript Code/Model-comparison/time-spline-DLNM-Roma.R
 ```
+## Simulation study under RCP scenarios
+- Use the following code to prepare future generated UTCI data under RCP2.6 and RCP8.5.
 
-- 
+```shell
+Code/RCP_simulation_study/data_processing_rcp26_rcp85.R
+```
+
+- Use the following code to simulate weekly mortality rates from 2031 to 2045 under RCP2.6 and RCP8.5 for DLNM--LC model.
+
+```shell
+Rscript Code/RCP_simulation_study/DLNM_LC_sim_rcp26.R
+Rscript Code/RCP_simulation_study/DLNM_LC_sim_rcp85.R
+Rscript Code/RCP_simulation_study/DLNM_LC_RCP_sim_comparison.R
+```
+
+- Use the following code to simulate weekly mortality rates from 2031 to 2045 under RCP2.6 and RCP8.5 for DLNM--LL model.
+
+```shell
+Rscript Code/RCP_simulation_study/DLNM_LL_sim_rcp26.R
+Rscript Code/RCP_simulation_study/DLNM_LL_sim_rcp85.R
+Rscript Code/RCP_simulation_study/DLNM_LL_RCP_sim_comparison.R
+``` 
