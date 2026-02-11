@@ -80,4 +80,5 @@ Rscript Code/RCP_simulation_study/DLNM_LC_RCP_sim_comparison.R
 Rscript Code/RCP_simulation_study/DLNM_LL_sim_rcp26.R
 Rscript Code/RCP_simulation_study/DLNM_LL_sim_rcp85.R
 Rscript Code/RCP_simulation_study/DLNM_LL_RCP_sim_comparison.R
-``` 
+```
+- The simulation results are saved as `.RData` file in `Results`. If your computer cannot save the simulation outputs due to limited memory/storage or computational resources, please download the `Results` folder on <a href="https://drive.google.com/drive/folders/1MTxlj_AZO0nfjLoOq5icurK3x4g1YJEW?usp=sharing">Google Drive</a> to conitinue reproducing the simulations.
