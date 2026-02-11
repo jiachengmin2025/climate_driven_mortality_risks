@@ -60,7 +60,7 @@ Rscript Code/Model-comparison/time-spline-DLNM-Lisbon.R
 Rscript Code/Model-comparison/time-spline-DLNM-Roma.R
 ```
 ## Mortlaity projections under RCP scenarios
-- Use the following code to prepare future generated UTCI data under RCP2.6 and RCP8.5.
+- Use the following code to process future generated UTCI data under RCP2.6 and RCP8.5.
 
 ```shell
 Code/RCP_simulation_study/data_processing_rcp26_rcp85.R
