@@ -28,7 +28,7 @@ All packages are available on CRAN.
 Rscript Code/Historical_data_aggregation/Historical_data.R
 ```
 
-- Use the following code to generate mixed-frequency cross-basis matrices across regions.
+- Use the following code to generate **mixed-frequency cross-basis matrices** across regions.
 
 ```shell
 Rscript Code/Crossbasis_matrix/cb_Attiki.R
@@ -52,7 +52,7 @@ Rscript Code/Calibration/DLNM-LL-Calibration.R
 Rscript Code/Calibration/time-varying-factors.R
 ```
 
-- Use the following code to run DLNM. In the expanding window cross-validation, the mean absolute error (MAE) can be computed.
+- Use the following code to **run time spline DLNM**. In the expanding window cross-validation, the mean absolute error (MAE) can be computed.
 
 ```shell
 Rscript Code/Model-comparison/time-spline-DLNM-Attiki.R
