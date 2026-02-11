@@ -17,3 +17,4 @@ All packages are available on CRAN.
 - `Code` folder contains all the code to reproduce the results.
 - `Data` folder contains the raw death count data, population data, historical UTCI data, and scenario-based UTCI data (RCP2.6 and RCP8.5).
 - `Figures` folder includes all the produced figures.
+- `Results` folder is not shown on Github due to the large size. The folder is available on <a href="https://unimelbcloud-my.sharepoint.com/:f:/r/personal/minjm_student_unimelb_edu_au/Documents/Results?csf=1&web=1&e=l9BCPP">arXiv</a>
