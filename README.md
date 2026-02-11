@@ -14,7 +14,6 @@ The following packages are required to finish the experiments.
 All packages are available on CRAN.
 
 ## Overview
-- `Data` folder contains the raw death count data, population data, historical UTCI data, and simulated UTCI data (RCP 2.6 and RCP 8.5).
-- `Function` folder contains the necessary functions for LC, LL, DLNM--LC, DLNM--LL, and Guibert et al's model. 
-- `B-DLNM-LC` and `B-DLNM-LL` folders contain DLNM--LC and DLNM--LL model validation, including expanding cross-validation results and MAE computations.
-- `Calibration` contains DLNM--LC and DLNM--LL model calibration, associating with Section 4 in the paper.
+- `Code` folder contains all the code to reproduce the results.
+- `Data` folder contains the raw death count data, population data, historical UTCI data, and scenario-based UTCI data (RCP 2.6 and RCP 8.5).
+- `Figures` folder includes all the produced figures.
