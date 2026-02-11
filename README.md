@@ -66,7 +66,7 @@ Rscript Code/Model-comparison/time-spline-DLNM-Roma.R
 Code/RCP_simulation_study/data_processing_rcp26_rcp85.R
 ```
 
-- Use the following code to simulate weekly mortality rates from 2031 to 2045 under RCP2.6 and RCP8.5 for DLNM--LC model.
+- Use the following code to simulate weekly mortality rates from 2031 to 2045 under RCP2.6 and RCP8.5 for DLNM--LC model, and visualize the results.
 
 ```shell
 Rscript Code/RCP_simulation_study/DLNM_LC_sim_rcp26.R
@@ -74,11 +74,19 @@ Rscript Code/RCP_simulation_study/DLNM_LC_sim_rcp85.R
 Rscript Code/RCP_simulation_study/DLNM_LC_RCP_sim_comparison.R
 ```
 
-- Use the following code to simulate weekly mortality rates from 2031 to 2045 under RCP2.6 and RCP8.5 for DLNM--LL model.
+- Use the following code to simulate weekly mortality rates from 2031 to 2045 under RCP2.6 and RCP8.5 for DLNM--LL model, and visualize the results.
 
 ```shell
 Rscript Code/RCP_simulation_study/DLNM_LL_sim_rcp26.R
 Rscript Code/RCP_simulation_study/DLNM_LL_sim_rcp85.R
 Rscript Code/RCP_simulation_study/DLNM_LL_RCP_sim_comparison.R
 ```
-- The simulation results are saved as `.RData` file in `Results`. If your computer cannot save the simulation outputs due to limited memory/storage or computational resources, please download the `Results` folder on <a href="https://drive.google.com/drive/folders/1MTxlj_AZO0nfjLoOq5icurK3x4g1YJEW?usp=sharing">Google Drive</a> to conitinue reproducing the simulations.
+- The simulation results are saved as `.RData` file in `Results`. If your computer cannot save the simulation outputs due to limited memory or computational resources, please download the `Results` folder on <a href="https://drive.google.com/drive/folders/1MTxlj_AZO0nfjLoOq5icurK3x4g1YJEW?usp=sharing">Google Drive</a> to conitinue reproducing the simulations.
+
+- Use the following code to aggregate annualized mortality data, simulate annualized mortality rates from 2031 to 2045 under RCP2.6 and RCP8.5, and visualize the results.
+
+```shell
+Rscript Code/RCP_simulation_study/Annualization_data_processing.R
+Rscript Code/RCP_simulation_study/Annualized_DLNM_LC_plotting.R
+Rscript Code/RCP_simulation_study/Annualized_DLNM_LL_plotting.R
+```
