@@ -11,7 +11,10 @@ The following packages are required to finish the experiments.
 - `seastests`, `tseries`, `nortest`, `hwwntest`, `Metrics`, for model diagnostics and statistical tests.
 - `ggplot2`, `patchwork`, `gridExtra`, `ggpubr`, `scales` for visualizations.
 
-All packages are available on CRAN.
+All packages are available on CRAN. To check whether all packages are installed or find out which are missing run:
+```shell
+Rscript requirements.R
+```
 
 ## Overview
 - `LC_DLNM.Rproj` initializes the project.
@@ -59,11 +62,11 @@ Rscript Code/Model-comparison/time-spline-DLNM-Attiki.R
 Rscript Code/Model-comparison/time-spline-DLNM-Lisbon.R
 Rscript Code/Model-comparison/time-spline-DLNM-Roma.R
 ```
-## Mortlaity projections under RCP scenarios
+## Mortality projections under RCP scenarios
 - Use the following code to process future generated UTCI data under RCP2.6 and RCP8.5.
 
 ```shell
-Code/RCP_simulation_study/data_processing_rcp26_rcp85.R
+Rscript Code/RCP_simulation_study/data_processing_rcp26_rcp85.R
 ```
 
 - Use the following code to simulate weekly mortality rates from 2031 to 2045 under RCP2.6 and RCP8.5 for DLNM--LC model, and visualize the results.
@@ -81,7 +84,7 @@ Rscript Code/RCP_simulation_study/DLNM_LL_sim_rcp26.R
 Rscript Code/RCP_simulation_study/DLNM_LL_sim_rcp85.R
 Rscript Code/RCP_simulation_study/DLNM_LL_RCP_sim_comparison.R
 ```
-- The simulation results are saved as `.RData` file in `Results`. If your computer cannot save the simulation outputs due to limited memory or computational resources, please download the `Results` folder on <a href="https://drive.google.com/drive/folders/1MTxlj_AZO0nfjLoOq5icurK3x4g1YJEW?usp=sharing">Google Drive</a> to conitinue reproducing the simulations.
+- The simulation results are saved as `.RData` file in `Results`. If your computer cannot save the simulation outputs due to limited memory or computational resources, please download the `Results` folder on <a href="https://drive.google.com/drive/folders/1MTxlj_AZO0nfjLoOq5icurK3x4g1YJEW?usp=sharing">Google Drive</a> to continue reproducing the simulations.
 
 - Use the following code to aggregate annualized mortality data, simulate annualized mortality rates from 2031 to 2045 under RCP2.6 and RCP8.5, and visualize the results.
 
