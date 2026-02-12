@@ -41,12 +41,12 @@ B_DLNM_LC = function(dat, cross_matrix, wave_data, tol, max_iter, region){
         all(abs(result$b_x - result0$b_x) < tol) &&
         all(abs(result$k_t - result0$k_t) < tol)) {
       log_fitted = log_fitted + result0$log_fitted
-      cat("converged")
+      cat("converged\n")
       break
     }
     if (iter >= max_iter) {  
       log_fitted = log_fitted + result0$log_fitted
-      cat("reach maximum iterations/not converged")
+      cat("reach maximum iterations/not converged\n")
       break
     }
     # Add DLNM fitted (r-1) part
