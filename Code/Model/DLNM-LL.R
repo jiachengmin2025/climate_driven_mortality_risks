@@ -14,16 +14,16 @@ Y_GE85 = read_xlsx("Data/Combined_data/Y_GE85_combined.xlsx")
 ## LC matrix (mortality rate)
 col_name = c("Y20_64", "Y65_74", "Y75_84", "Y_GE85")
 
-Attiki = cbind(Y20_64$Attiki/Y20_64$Attiki_pop,Y65_74$Attiki/Y65_74$Attiki_pop, 
-               Y75_84$Attiki/Y75_84$Attiki_pop, Y_GE85$Attiki/Y_GE85$Attiki_pop)
+Attiki = cbind(Y20_64[,3]/Y20_64[,9],Y65_74[,3]/Y65_74[,9], 
+               Y75_84[,3]/Y75_84[,9], Y_GE85[,3]/Y_GE85[,9])
 colnames(Attiki) = col_name
 
-Lisbon = cbind(Y20_64$Lisbon/Y20_64$Lisbon_pop,Y65_74$Lisbon/Y65_74$Lisbon_pop, 
-               Y75_84$Lisbon/Y75_84$Lisbon_pop, Y_GE85$Lisbon/Y_GE85$Lisbon_pop)
+Lisbon = cbind(Y20_64[,4]/Y20_64[,10],Y65_74[,4]/Y65_74[,10],
+               Y75_84[,4]/Y75_84[,10], Y_GE85[,4]/Y_GE85[,10])
 colnames(Lisbon) = col_name
 
-Roma = cbind(Y20_64$Roma/Y20_64$Roma_pop,Y65_74$Roma/Y65_74$Roma_pop, 
-             Y75_84$Roma/Y75_84$Roma_pop, Y_GE85$Roma/Y_GE85$Roma_pop)
+Roma = cbind(Y20_64[,6]/Y20_64[,12],Y65_74[,6]/Y65_74[,12], 
+             Y75_84[,6]/Y75_84[,12], Y_GE85[,6]/Y_GE85[,12])
 colnames(Roma) = col_name
 
 ## Store heat/cold wave data
