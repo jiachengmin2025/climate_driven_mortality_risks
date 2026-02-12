@@ -149,13 +149,13 @@ Attiki.residual = Attiki - exp(Attiki.DLNMLC$log_fitted)
 ### In Shapiro–Wilk test, Anderson–Darling test, and Jarque–Bera test, H0: residual is Gaussian vs H1: residual is non-Gaussian. 
 # Shapiro–Wilk test
 shapiro.p.value <- sapply(Attiki.residual, function(x) shapiro.test(x[is.finite(x)])$p.value)
-ifelse(shapiro.p.value < 0.05, "Residual is non-Gaussian", "Residual is Guassian")
+ifelse(shapiro.p.value < 0.05, "Residual is non-Gaussian", "Residual is Gaussian")
 # Anderson–Darling test
 ad.p.value <- sapply(Attiki.residual, function(x) ad.test(x[is.finite(x)])$p.value)
-ifelse(ad.p.value < 0.05, "Residual is non-Gaussian", "Residual is Guassian")
+ifelse(ad.p.value < 0.05, "Residual is non-Gaussian", "Residual is Gaussian")
 # Jarque–Bera test
 jarque.bera.p.value <- sapply(Attiki.residual, function(x) jarque.bera.test(x[is.finite(x)])$p.value)
-ifelse(jarque.bera.p.value < 0.05, "Residual is non-Gaussian", "Residual is Guassian")
+ifelse(jarque.bera.p.value < 0.05, "Residual is non-Gaussian", "Residual is Gaussian")
 
 ## Seasonality test on model residual
 # Attiki 
