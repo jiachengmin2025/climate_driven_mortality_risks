@@ -5,7 +5,6 @@ invisible(lapply(packages, library, character.only = TRUE))
 ## Load data
 region_name = c("Attiki", "Lisbon", "Roma")
 age = c('Y20_64', 'Y65_74', 'Y75_84', 'Y_GE85')
-setwd("Data/Combined_data/")
 Y20_64 = read_xlsx("Data/Combined_data/Y20_64_combined.xlsx")
 Y65_74 = read_xlsx("Data/Combined_data/Y65_74_combined.xlsx")
 Y75_84 = read_xlsx("Data/Combined_data/Y75_84_combined.xlsx")
