@@ -186,7 +186,7 @@ Roma_plot <- ggplot(Roma_long) +
 
 
 
-# Plot Historical Mortlaity Rates
+# Plot Historical Mortality Rates
 # Ensure Date column is correctly formatted
 Attiki$Time <- seq(from = as.Date("2015-01-01"), by = "week", length.out = nrow(Attiki))
 Lisbon$Time <- seq(from = as.Date("2015-01-01"), by = "week", length.out = nrow(Lisbon))
