@@ -42,6 +42,11 @@ Rscript -e "rmarkdown::render('Code/Main_paper/Section_4_Empirical_results/02_mo
 ```
 
 ## Section 5: Mortality projections under RCP scenarios
+- We first process the future UTCI data under RCP2.6 and RCP8.5.
+- Use the following code to process the future UTCI data.
+```shell
+Rscript -e "rmarkdown::render('Code/Main_paper/Section_5_Mortality_projection/00_RCP_future_input_processing.Rmd')"
+```
 - We present the results of weekly mortality projections (**Section 5.3**) under RCP2.6 and RCP8.5 in **Figure 7, 8**, and **9**. And then 
 - Use the following code to run the weekly mortality projections for DLNM--LC and DLNM--LL model, respectively.    
 ```shell
