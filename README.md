@@ -42,13 +42,22 @@ Rscript -e "rmarkdown::render('Code/Main_paper/Section_4_Empirical_results/02_mo
 ```
 
 ## Section 5: Mortality projections under RCP scenarios
-- We present the results of weekly mortality projections (**Section 5.3**) under RCP2.6 and RCP8.5 in **Figure 7, 8**, and **9**. And then we illustrate the results of annual mortality projections (**Section 5.4**) for Athens in **Figure 10**.
+- We present the results of weekly mortality projections (**Section 5.3**) under RCP2.6 and RCP8.5 in **Figure 7, 8**, and **9**. And then 
 - Use the following code to run the weekly mortality projections for DLNM--LC and DLNM--LL model, respectively.    
 ```shell
 Rscript -e "rmarkdown::render('Code/Main_paper/Section_4_Empirical_results/01_DLNM_LC_RCP_simulation.Rmd')"
 Rscript -e "rmarkdown::render('Code/Main_paper/Section_4_Empirical_results/02_DLNM_LL_RCP_simulation.Rmd')"
 ```
-- Use the following code toreproduce **Figure 7, 8**, and **9,**.
+- Use the following code toreproduce **Figure 7, 8**, and **9**.
+```shell
+Rscript -e "rmarkdown::render('Code/Main_paper/Section_4_Empirical_results/03_RCP_weekly_visualization.Rmd')"
+```
+- We illustrate the results of annual mortality projections (**Section 5.4**) for Athens in **Figure 10**.
+- Use the following code to run the annual mortality projections for DLNM--LC and DLNM--LL model, respectively.
+```shell
+Rscript -e "rmarkdown::render('Code/Main_paper/Section_4_Empirical_results/04_RCP_annualization.Rmd')"
+```
+- Use the following code toreproduce **Figure 10**.
 ```shell
 Rscript -e "rmarkdown::render('Code/Main_paper/Section_4_Empirical_results/03_RCP_weekly_visualization.Rmd')"
 ```
