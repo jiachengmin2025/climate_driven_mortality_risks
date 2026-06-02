@@ -23,18 +23,23 @@ Rscript requirements.R
 - `Data` folder contains the raw death count data, population data, historical UTCI data, and scenario-based UTCI data (RCP2.6 and RCP8.5).
 - 
 ## Data
-- In **Section 3**, we visualize the weekly historical mortality rates (2015-2019) in Figure 1, and UTCI data in Figure 2.
-- Use the following code to generate Figure 1 and Figure 2.
+- In **Section 3**, we visualize the weekly historical mortality rates (2015-2019) in **Figure 1**, and UTCI data in **Figure 2**.
+- Use the following code to generate **Figure 1** and **Figure 2**.
 ```shell
 Rscript -e "rmarkdown::render('Code/Main_paper/Section_3_Data/01_Historical_data_aggregation.Rmd')"
 ``` 
 
 ## Empirical results
-- In **Section 4**, we calibrate stochastic mortality component (**Section 4.1**) by visualizing the fitted time-varying factors for LC, LL, DLNM--LC, and DLNM--LL models in Figure 3 and Figure 4. Then we calibrate DLNM climate-driven mortality component (**Section 4.2**) in DLNM--LC and DLNM--LC model by visualizing overall cumulative effect of UTCI in Figure 5 and present coefficients of $\text{HWD}_t$ and $\text{CWD}_t$ in Table 1. 
-- Use the following code to reproduce Figure 3, 4, and 5, and Table 1.
+- In **Section 4**, we calibrate stochastic mortality component (**Section 4.1**) by visualizing the fitted time-varying factors for LC, LL, DLNM--LC, and DLNM--LL models in Figure 3 and Figure 4. Then we calibrate DLNM climate-driven mortality component (**Section 4.2**) in DLNM--LC and DLNM--LC model by visualizing overall cumulative effects of UTCI (**Section 4.3**) in Figure 5 and present coefficients of $\text{HWD}_t$ and $\text{CWD}_t$ in Table 1. 
+- Use the following code to reproduce **Figure 3, 4**, and **5**, and **Table 1**.
 ```shell
 Rscript -e "rmarkdown::render('Code/Main_paper/Section_4_Empirical_results/01_DLNM_LC_LL_calibration.Rmd')"
-``` 
+```
+- We perform the expanding-window cross-validation in **Section 4.4** for 6 models: **LC, LL, DLNM--LC, DLNM--LL, Madaniyazi et al., Guibert et al.**. The mean absolute error (MAE) under $\times 100$ scale is reported in **Table 2**.
+- Use the following code to reproduce **Table 2**.
+```shell
+Rscript -e "rmarkdown::render('Code/Main_paper/Section_4_Empirical_results/02_model_comparison_MAE_table.Rmd')"
+```
 ## Mortality projections under RCP scenarios
 
 
