@@ -26,61 +26,61 @@ Rscript requirements.R
 - We visualize the weekly historical mortality rates (2015-2019) in **Figure 1**, and UTCI data in **Figure 2**.
 - Use the following code to reproduce **Figure 1** and **Figure 2**.
 ```shell
-Rscript -e "rmarkdown::render('Code/Main_paper/Section_3_Data/01_Historical_data_aggregation.Rmd')"
+Rscript -e "render('Code/Main_paper/Section_3_Data/01_Historical_data_aggregation.Rmd')"
 ``` 
 
 ## Section 4: Empirical results
 - We calibrate stochastic mortality component (**Section 4.1**) by visualizing the fitted time-varying factors for LC, LL, DLNM--LC, and DLNM--LL models in **Figure 3** and **Figure 4**. Then we calibrate DLNM climate-driven mortality component (**Section 4.2**) in DLNM--LC and DLNM--LC model by visualizing overall cumulative effects of UTCI (**Section 4.3**) in Figure 5 and present the coefficients of $\text{HWD}_t$ and $\text{CWD}_t$ in Table 1. 
 - Use the following code to reproduce **Figure 3, 4**, and **5**, and **Table 1**.
 ```shell
-Rscript -e "rmarkdown::render('Code/Main_paper/Section_4_Empirical_results/01_DLNM_LC_LL_calibration.Rmd')"
+Rscript -e "render('Code/Main_paper/Section_4_Empirical_results/01_DLNM_LC_LL_calibration.Rmd')"
 ```
 - We perform the expanding-window cross-validation in **Section 4.4** for 6 models: **LC, LL, DLNM--LC, DLNM--LL, Madaniyazi et al., Guibert et al.**. The forecast mean absolute error (MAE) under $\times 100$ scale is reported in **Table 2**.
 - Use the following code to reproduce **Table 2**.
 ```shell
-Rscript -e "rmarkdown::render('Code/Main_paper/Section_4_Empirical_results/02_model_comparison_MAE_table.Rmd')"
+Rscript -e "render('Code/Main_paper/Section_4_Empirical_results/02_model_comparison_MAE_table.Rmd')"
 ```
 
 ## Section 5: Mortality projections under RCP scenarios
 - We first process the future UTCI data under RCP2.6 and RCP8.5.
 - Use the following code to process the future UTCI data.
 ```shell
-Rscript -e "rmarkdown::render('Code/Main_paper/Section_5_Mortality_projection/00_RCP_future_input_processing.Rmd')"
+Rscript -e "render('Code/Main_paper/Section_5_Mortality_projection/00_RCP_future_input_processing.Rmd')"
 ```
 - We present the results of weekly mortality projections (**Section 5.3**) under RCP2.6 and RCP8.5 in **Figure 7, 8**, and **9**. 
 - Use the following code to run the weekly mortality projections for DLNM--LC and DLNM--LL model, respectively.    
 ```shell
-Rscript -e "rmarkdown::render('Code/Main_paper/Section_5_Mortality_projection/01_DLNM_LC_RCP_simulation.Rmd')"
-Rscript -e "rmarkdown::render('Code/Main_paper/Section_5_Mortality_projection/02_DLNM_LL_RCP_simulation.Rmd')"
+Rscript -e "render('Code/Main_paper/Section_5_Mortality_projection/01_DLNM_LC_RCP_simulation.Rmd')"
+Rscript -e "render('Code/Main_paper/Section_5_Mortality_projection/02_DLNM_LL_RCP_simulation.Rmd')"
 ```
 - Use the following code to reproduce **Figure 7, 8**, and **9**.
 ```shell
-Rscript -e "rmarkdown::render('Code/Main_paper/Section_5_Mortality_projection/03_RCP_weekly_visualization.Rmd')"
+Rscript -e "render('Code/Main_paper/Section_5_Mortality_projection/03_RCP_weekly_visualization.Rmd')"
 ```
 - We illustrate the results of annual mortality projections (**Section 5.4**) in **Figure 10** of the paper, and **Figure F.1** and **F.2** in the Supplementary Material.
 - Use the following code to run the annual mortality projections for DLNM--LC and DLNM--LL model, respectively.
 ```shell
-Rscript -e "rmarkdown::render('Code/Main_paper/Section_5_Mortality_projection/04_RCP_annualization.Rmd')"
+Rscript -e "render('Code/Main_paper/Section_5_Mortality_projection/04_RCP_annualization.Rmd')"
 ```
 - Use the following code to reproduce **Figure 10**, **Figure F.1** and **F.2**.
 ```shell
-Rscript -e "rmarkdown::render('Code/Main_paper/Section_5_Mortality_projection/05_RCP_annualized_visualization.Rmd')"
+Rscript -e "render('Code/Main_paper/Section_5_Mortality_projection/05_RCP_annualized_visualization.Rmd')"
 ```
 ## Supplementary Material
 - In **Section C**, we present the lagged effects via DLNM across all regions for DLNM--LC and DLNM--LL models in **Figure C.1, C.2, C.3, C.4, C.5** and **C.6**.
 - Use the following code to reproduce **Figure C.1, C.2, C.3, C.4, C.5** and **C.6**.
 ```shell
-Rscript -e "rmarkdown::render('Code/Supplementary/Section_C_Figures_of_specific_lagged_effects_via_DLNM.Rmd')"
+Rscript -e "render('Code/Supplementary/Section_C_Figures_of_specific_lagged_effects_via_DLNM.Rmd')"
 ```
 - In Section D, we present the optimal time series model for time-varying factors (**Section D.1**) and seasonality test on model residuals (**Section D.2**).
 - Use the following code to reproduce **Table D.1, D.2, D.3** and **D.4**.
 ```shell
-Rscript -e "rmarkdown::render('Code/Supplementary/Section_D_Model_specifications_and_diagnostics.Rmd')"
+Rscript -e "render('Code/Supplementary/Section_D_Model_specifications_and_diagnostics.Rmd')"
 ```
 - In **Section E**, we report the forecast performance under alternative heat and cold wave definitions, reporting forecast MAE from expanding-window cross-validation in **Table E.5** and **E.6**.
 - Use the following code to reproduce **Table E.5, E.6**.
 ```shell
-Rscript -e "rmarkdown::render('Code/Supplementary/Section_E_Alternative_heat_and_cold_wave_definitions.Rmd')"
+Rscript -e "render('Code/Supplementary/Section_E_Alternative_heat_and_cold_wave_definitions.Rmd')"
 ```
 
 ## References
