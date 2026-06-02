@@ -20,13 +20,14 @@ Rscript requirements.R
 - `LC_DLNM.Rproj` initializes the project.
 - `Code` folder contains all the code to reproduce the results.
   - The `Function` subfolder within `Code` contains the core model functions.
-
-## Data
 - `Data` folder contains the raw death count data, population data, historical UTCI data, and scenario-based UTCI data (RCP2.6 and RCP8.5).
-- Use the following code to visualize the weekly historical mortality rates (2015-2019) and UTCI data.
+- 
+## Data
+- In Section 3, the weekly historical mortality rates (2015-2019) and UTCI data are visualized.
+- Use the following code to generate Figure 1 and Figure 2.
 
 ```shell
-Rscript -e 
+Rscript -e "rmarkdown::render('Code/Main_paper/Section_3_Data/01_Historical_data_aggregation.Rmd')"
 ``` 
 
 ## Empirical results
