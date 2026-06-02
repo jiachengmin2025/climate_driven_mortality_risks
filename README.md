@@ -20,7 +20,6 @@ Rscript requirements.R
 - `LC_DLNM.Rproj` initializes the project.
 - `Code` folder contains all the code to reproduce the results.
   - The `Function` subfolder within `Code` contains the core model functions.
-- `Data` folder contains the raw death count data, population data, historical UTCI data, and scenario-based UTCI data (RCP2.6 and RCP8.5).
 
 ## Data
 - `Data` folder contains the raw death count data, population data, historical UTCI data, and scenario-based UTCI data (RCP2.6 and RCP8.5).
