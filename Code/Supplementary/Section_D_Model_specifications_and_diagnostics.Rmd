@@ -1,0 +1,190 @@
+---
+title: "Section D. Model specifications and diagnostics"
+output: pdf_document
+header-includes:
+  - \usepackage{float}
+  - \usepackage{booktabs}
+  - \usepackage{multirow}
+---
+
+## Setup
+```{r section-d-setup, message=FALSE, warning=FALSE}
+packages <- c("readxl", "forecast", "dlnm", "splines", "Metrics",
+              "demography", "tseries", "seastests")
+invisible(lapply(packages, library, character.only = TRUE))
+
+find_project_root <- function(start = getwd()) {
+  path <- normalizePath(start, mustWork = FALSE)
+  for (i in seq_len(8)) {
+    if (dir.exists(file.path(path, "Code")) && dir.exists(file.path(path, "Data"))) {
+      return(path)
+    }
+    parent <- dirname(path)
+    if (identical(parent, path)) break
+    path <- parent
+  }
+  stop("Set LC_DLNM_BASE_DIR to the project root.")
+}
+
+base_dir <- Sys.getenv("LC_DLNM_BASE_DIR")
+if (!nzchar(base_dir)) base_dir <- find_project_root()
+
+function_dir <- file.path(base_dir, "Code/Function")
+results_dir <- file.path(base_dir, "Results/Diagnostics")
+calibration_rmd <- file.path(
+  base_dir,
+  "Code/Main_Paper/Section_4_Empirical_results/01_DLNM_LC_LL_calibration.Rmd"
+)
+calibration_results_dir <- file.path(base_dir, "Results/Calibration")
+dir.create(results_dir, recursive = TRUE, showWarnings = FALSE)
+dir.create(calibration_results_dir, recursive = TRUE, showWarnings = FALSE)
+files <- list.files(function_dir, pattern = "\\.R$", full.names = TRUE)
+invisible(sapply(files, source))
+```
+
+## D.1 Optimal time series model for time-varying factors
+```{r section-d-sarima-tables, results='asis', message=FALSE, warning=FALSE}
+ensure_sarima_tables <- function() {
+  required_files <- file.path(
+    calibration_results_dir,
+    c("optimal_sarima_table.tex", "optimal_sarima_coef_table.tex")
+  )
+
+  if (all(file.exists(required_files))) {
+    return(invisible(required_files))
+  }
+
+  if (!file.exists(calibration_rmd)) {
+    stop("Calibration Rmd not found: ", calibration_rmd)
+  }
+
+  old_unnamed_label <- knitr::opts_knit$get("unnamed.chunk.label")
+  knitr::opts_knit$set(unnamed.chunk.label = "calibration_component")
+  on.exit(knitr::opts_knit$set(unnamed.chunk.label = old_unnamed_label),
+          add = TRUE)
+
+  script <- tempfile(fileext = ".R")
+  knitr::purl(calibration_rmd, output = script, quiet = TRUE)
+  calibration_env <- new.env(parent = globalenv())
+  invisible(capture.output(sys.source(script, envir = calibration_env)))
+
+  if (!all(file.exists(required_files))) {
+    build_sarima_tables_from_fits(
+      calibration_env$b,
+      calibration_env$b1,
+      calibration_env$b2,
+      calibration_env$b3,
+      calibration_results_dir
+    )
+  }
+
+  missing_files <- required_files[!file.exists(required_files)]
+  if (length(missing_files) > 0) {
+    stop("Could not generate SARIMA table file(s): ",
+         paste(basename(missing_files), collapse = ", "))
+  }
+
+  invisible(required_files)
+}
+
+sarima_files <- ensure_sarima_tables()
+cat(readLines(sarima_files[[1]]), sep = "\n")
+cat("\n\n")
+cat(readLines(sarima_files[[2]]), sep = "\n")
+```
+
+## D.2 Seasonality test on residuals
+### Run Proposed Models
+```{r section-d-run-models, message=FALSE, warning=FALSE, results='hide'}
+diagnostics <- DLNM_residual_diagnostics(base_dir)
+```
+
+## Helper Functions
+```{r section-d-helpers}
+format_p <- function(x) {
+  ifelse(is.na(x), "--", sprintf("%.2f", as.numeric(x)))
+}
+
+make_seasonality_latex <- function(test_list, display_names, model_name,
+                                   caption, label) {
+  region_order <- c("Attiki", "Lisbon", "Roma")
+  region_order <- region_order[region_order %in% names(test_list)]
+  test_rows <- c(QS = "QS",
+                 Friedman = "Friedman",
+                 `K--W` = "Kruskal-Wallis")
+
+  lines <- c(
+    "\\begin{table}[H]",
+    "\\centering",
+    "\\begin{tabular}{lccccccccc}",
+    "\\toprule",
+    paste0(
+      "\\multirow{2}{*}{\\textbf{", model_name, "}}",
+      " & \\multicolumn{3}{c}{\\textbf{", display_names[[region_order[[1]]]], "}}",
+      " & \\multicolumn{3}{c}{\\textbf{", display_names[[region_order[[2]]]], "}}",
+      " & \\multicolumn{3}{c}{\\textbf{", display_names[[region_order[[3]]]], "}} \\\\"
+    ),
+    "\\cmidrule(lr){2-4} \\cmidrule(lr){5-7} \\cmidrule(lr){8-10}",
+    paste0(
+      " & \\textbf{QS} & \\textbf{Friedman} & \\textbf{K--W}",
+      " & \\textbf{QS} & \\textbf{Friedman} & \\textbf{K--W}",
+      " & \\textbf{QS} & \\textbf{Friedman} & \\textbf{K--W} \\\\"
+    ),
+    "\\midrule"
+  )
+
+  for (age_group in colnames(test_list[[region_order[[1]]]])) {
+    values <- c()
+    for (region in region_order) {
+      test_table <- test_list[[region]]
+      values <- c(values, format_p(test_table[test_rows, age_group]))
+    }
+    age_label <- gsub("-", "--", age_group)
+    lines <- c(lines, paste0(age_label, " & ", paste(values, collapse = " & "), " \\\\"))
+  }
+
+  lines <- c(
+    lines,
+    "\\bottomrule",
+    "\\end{tabular}",
+    paste0("\\caption{", caption, "}"),
+    paste0("\\label{", label, "}"),
+    "\\end{table}"
+  )
+  paste(lines, collapse = "\n")
+}
+```
+
+## DLNM-LC Residual Seasonality
+```{r section-d-dlnm-lc-seasonality, results='asis'}
+lc_tests <- diagnostics$DLNM_LC$seasonality_tests
+lc_display_names <- diagnostics$DLNM_LC$display_names
+
+lc_latex <- make_seasonality_latex(
+  lc_tests,
+  lc_display_names,
+  "DLNM--LC",
+  "The seasonality test of model residual in DLNM--LC model.",
+  "tab:seasonality_dlnm_lc"
+)
+
+writeLines(lc_latex, file.path(results_dir, "residual_seasonality_DLNM_LC.tex"))
+cat(lc_latex)
+```
+
+## DLNM-LL Residual Seasonality
+```{r section-d-dlnm-ll-seasonality, results='asis'}
+ll_tests <- diagnostics$DLNM_LL$seasonality_tests
+ll_display_names <- diagnostics$DLNM_LL$display_names
+
+ll_latex <- make_seasonality_latex(
+  ll_tests,
+  ll_display_names,
+  "DLNM--LL",
+  "The seasonality test of model residual in DLNM--LL model.",
+  "tab:seasonality_dlnm_ll"
+)
+
+writeLines(ll_latex, file.path(results_dir, "residual_seasonality_DLNM_LL.tex"))
+cat(ll_latex)
+```

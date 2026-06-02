@@ -1,0 +1,65 @@
+---
+title: "RCP Annualization"
+output: pdf_document
+params:
+  run_annualization: true
+  group_size: 52
+---
+
+## Setup
+```{r, warning=FALSE, message=FALSE}
+find_project_root <- function(start = getwd()) {
+  path <- normalizePath(start, mustWork = FALSE)
+  for (i in seq_len(8)) {
+    if (dir.exists(file.path(path, "Code")) && dir.exists(file.path(path, "Data"))) return(path)
+    parent <- dirname(path)
+    if (identical(parent, path)) break
+    path <- parent
+  }
+  stop("Set LC_DLNM_BASE_DIR to the project root.")
+}
+base_dir <- Sys.getenv("LC_DLNM_BASE_DIR")
+if (!nzchar(base_dir)) base_dir <- find_project_root()
+default_params <- list(run_annualization = TRUE, group_size = 52)
+rmd_params <- if (exists("params") && !is.null(params)) {
+  modifyList(default_params, as.list(params))
+} else default_params
+
+invisible(lapply(list.files(file.path(base_dir, "Code/Function"),
+                            pattern = "\\.R$", full.names = TRUE), source))
+
+simulation_dir <- file.path(base_dir, "Results/Simulated_mortality_rates")
+annualized_dir <- file.path(base_dir, "Results/Simulated_annualized_mortality_rates")
+dir.create(annualized_dir, recursive = TRUE, showWarnings = FALSE)
+
+model_names <- c("LC", "LL")
+scenario_names <- c("rcp26", "rcp85")
+```
+
+## Annualize Weekly Simulation Results
+```{r, eval=isTRUE(get0("rmd_params", ifnotfound = list(run_annualization = TRUE))$run_annualization)}
+annualized_results <- list()
+
+for (model in model_names) {
+  annualized_results[[model]] <- list()
+
+  for (scenario in scenario_names) {
+    weekly_simulation <- load_rcp_weekly_simulation(
+      model = model,
+      scenario = scenario,
+      simulation_dir = simulation_dir
+    )
+    annualized_results[[model]][[scenario]] <- annualize_rcp_simulation(
+      weekly_simulation,
+      group_size = rmd_params$group_size
+    )
+
+    save_rcp_annualized_simulation(
+      annualized_results[[model]][[scenario]],
+      model = model,
+      scenario = scenario,
+      annualized_dir = annualized_dir
+    )
+  }
+}
+```

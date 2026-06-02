@@ -1,0 +1,252 @@
+---
+title: "Historical data aggregation"
+output: pdf_document
+geometry: margin=0.8in
+---
+
+## Setup
+```{r setup, message=FALSE, warning=FALSE, results='hide'}
+packages <- c("readxl", "ggplot2", "ggpubr", "reshape2")
+invisible(lapply(packages, library, character.only = TRUE))
+
+find_project_root <- function(start = getwd()) {
+  path <- normalizePath(start, mustWork = FALSE)
+  for (i in seq_len(8)) {
+    if (dir.exists(file.path(path, "Code")) && dir.exists(file.path(path, "Data"))) {
+      return(path)
+    }
+    parent <- dirname(path)
+    if (identical(parent, path)) break
+    path <- parent
+  }
+  stop("Set LC_DLNM_BASE_DIR to the project root.")
+}
+
+base_dir <- Sys.getenv("LC_DLNM_BASE_DIR")
+if (!nzchar(base_dir)) base_dir <- find_project_root()
+
+combined_dir <- file.path(base_dir, "Data/Combined_data")
+daily_dir <- file.path(base_dir, "Data/UTCI_data/Daily_data")
+processing_dir <- file.path(base_dir, "Results/Processed_data")
+legacy_output_dir <- file.path(base_dir, "Results/Processed_data/legacy")
+data_visualization_figure_dir <- file.path(base_dir, "Figures/Data_visualization")
+
+dir.create(processing_dir, recursive = TRUE, showWarnings = FALSE)
+dir.create(legacy_output_dir, recursive = TRUE, showWarnings = FALSE)
+dir.create(data_visualization_figure_dir, recursive = TRUE, showWarnings = FALSE)
+
+write_legacy_output <- TRUE
+
+age_names <- c("Y20_64", "Y65_74", "Y75_84", "Y_GE85")
+age_group_labels <- c("Y20_64" = "20-64", "Y65_74" = "65-74",
+                      "Y75_84" = "75-84", "Y_GE85" = "85+")
+
+city_specs <- data.frame(
+  display_name = c("Athens", "Lisbon", "Rome"),
+  source_col = c("Attiki", "Lisbon", "Roma"),
+  legacy_name = c("Attiki", "Lisbon", "Roma"),
+  death_col = c(3, 4, 6),
+  exposure_col = c(9, 10, 12),
+  loess_span = c(0.05, 0.03, 0.03),
+  stringsAsFactors = FALSE
+)
+
+line_colors <- c("Y20_64" = "#9ecae1", "Y65_74" = "#6baed6",
+                 "Y75_84" = "#2171b5", "Y_GE85" = "#084594")
+
+date_limits <- as.Date(c("2015-01-01", "2020-01-01"))
+```
+
+## Load Combined Data
+```{r load-combined-data, message=FALSE, warning=FALSE, results='hide'}
+combined <- list(
+  Y20_64 = read_xlsx(file.path(combined_dir, "Y20_64_combined.xlsx")),
+  Y65_74 = read_xlsx(file.path(combined_dir, "Y65_74_combined.xlsx")),
+  Y75_84 = read_xlsx(file.path(combined_dir, "Y75_84_combined.xlsx")),
+  Y_GE85 = read_xlsx(file.path(combined_dir, "Y_GE85_combined.xlsx"))
+)
+```
+
+## Mortality Rate And Wave Lists
+```{r mortality-rate-and-wave-lists, message=FALSE, warning=FALSE, results='hide'}
+build_rate_matrix <- function(spec) {
+  out <- cbind(
+    combined$Y20_64[[spec$death_col]] / combined$Y20_64[[spec$exposure_col]],
+    combined$Y65_74[[spec$death_col]] / combined$Y65_74[[spec$exposure_col]],
+    combined$Y75_84[[spec$death_col]] / combined$Y75_84[[spec$exposure_col]],
+    combined$Y_GE85[[spec$death_col]] / combined$Y_GE85[[spec$exposure_col]]
+  )
+  colnames(out) <- age_names
+  out * 52
+}
+
+build_wave_data <- function(spec, use_display_names = TRUE) {
+  prefix <- if (use_display_names) spec$display_name else spec$legacy_name
+  out <- data.frame(
+    hot_wave = combined$Y20_64[[paste0(spec$source_col, "_hot_wave3")]],
+    cold_wave = combined$Y20_64[[paste0(spec$source_col, "_cold_wave3")]]
+  )
+  colnames(out) <- c(paste0(prefix, "_hot_wave3"),
+                     paste0(prefix, "_cold_wave3"))
+  out
+}
+
+dat_list <- setNames(lapply(seq_len(nrow(city_specs)), function(i) {
+  build_rate_matrix(city_specs[i, ])
+}), city_specs$display_name)
+
+wave_list <- setNames(lapply(seq_len(nrow(city_specs)), function(i) {
+  build_wave_data(city_specs[i, ], use_display_names = TRUE)
+}), city_specs$display_name)
+
+legacy_dat_list <- setNames(dat_list, city_specs$legacy_name)
+legacy_wave_list <- setNames(lapply(seq_len(nrow(city_specs)), function(i) {
+  build_wave_data(city_specs[i, ], use_display_names = FALSE)
+}), city_specs$legacy_name)
+```
+
+## Save Aggregated Data
+```{r save-aggregated-data, message=FALSE, warning=FALSE, results='hide'}
+save(
+  dat_list, wave_list, legacy_dat_list, legacy_wave_list,
+  file = file.path(processing_dir, "Historical_data.RData")
+)
+
+if (write_legacy_output) {
+  legacy_env <- new.env(parent = emptyenv())
+  legacy_env$dat_list <- legacy_dat_list
+  legacy_env$wave_list <- legacy_wave_list
+  save(list = c("dat_list", "wave_list"),
+       file = file.path(legacy_output_dir, "Historical_data.RData"),
+       envir = legacy_env)
+}
+```
+
+## Historical Mortality Rate Plot
+```{r historical-mortality-rate-plot, fig.width=7.5, fig.height=3, message=FALSE, warning=FALSE, results='hide'}
+make_mortality_long <- function(rate_matrix) {
+  plot_data <- as.data.frame(rate_matrix)
+  plot_data$Time <- seq(date_limits[1], by = "week", length.out = nrow(plot_data))
+  reshape2::melt(plot_data, id.vars = "Time",
+                 variable.name = "AgeGroup", value.name = "value")
+}
+
+mortality_long <- lapply(dat_list, make_mortality_long)
+y_min <- min(unlist(lapply(mortality_long, `[[`, "value")), na.rm = TRUE)
+y_max <- max(unlist(lapply(mortality_long, `[[`, "value")), na.rm = TRUE)
+year_lines <- seq(as.Date("2016-01-01"), as.Date("2019-01-01"), by = "year")
+
+plot_mortality <- function(data, region) {
+  ggplot(data, aes(x = Time)) +
+    geom_vline(xintercept = year_lines,
+               linetype = "dashed",
+               color = "gray50",
+               linewidth = 0.3) +
+    geom_line(aes(y = value, color = AgeGroup), linewidth = 1.2, alpha = 0.8) +
+    geom_smooth(aes(y = value, group = AgeGroup),
+                method = "loess",
+                span = city_specs$loess_span[match(region, city_specs$display_name)],
+                linewidth = 0.5,
+                se = TRUE,
+                color = "red") +
+    labs(title = region, x = "Year", y = "Mortality Rate", color = "Age Group") +
+    scale_color_manual(name = "Age Group", values = line_colors, labels = age_group_labels) +
+    scale_x_date(
+      breaks = seq(date_limits[1], date_limits[2], by = "1 year"),
+      date_labels = "%y", limits = date_limits, expand = c(0, 0.01)
+    ) +
+    scale_y_log10(limits = c(y_min, y_max)) +
+    theme_minimal() +
+    theme(
+      legend.position = "none",
+      panel.border = element_rect(color = "black", fill = NA, linewidth = 1),
+      panel.grid = element_blank(),
+      plot.title = element_text(hjust = 0.5),
+      text = element_text(size = 12)
+    )
+}
+
+mortality_plots <- lapply(names(mortality_long), function(region) {
+  plot_mortality(mortality_long[[region]], region) +
+    theme(plot.margin = margin(2, 5, 2, 2, "mm"))
+})
+
+Mortality_plot <- ggarrange(
+  plotlist = mortality_plots,
+  ncol = 3,
+  common.legend = TRUE,
+  legend = "bottom"
+)
+
+ggsave(
+  file.path(data_visualization_figure_dir, "Historical_combined.pdf"),
+  Mortality_plot, width = 7.5, height = 3, units = "in", dpi = 300
+)
+
+print(Mortality_plot)
+```
+
+## Historical UTCI Plot
+```{r historical-utci-plot, fig.width=9, fig.height=6, message=FALSE, warning=FALSE, results='hide'}
+UTCI_mean <- read_xlsx(file.path(daily_dir, "UTCI_daily_mean.xlsx"))
+UTCI_max <- read_xlsx(file.path(daily_dir, "UTCI_daily_max.xlsx"))
+UTCI_min <- read_xlsx(file.path(daily_dir, "UTCI_daily_min.xlsx"))
+
+build_utci_data <- function(spec) {
+  data.frame(
+    Date = as.Date(UTCI_mean$Date),
+    Mean = UTCI_mean[[spec$source_col]],
+    Min = UTCI_min[[spec$source_col]],
+    Max = UTCI_max[[spec$source_col]]
+  )
+}
+
+utci_list <- setNames(lapply(seq_len(nrow(city_specs)), function(i) {
+  build_utci_data(city_specs[i, ])
+}), city_specs$display_name)
+
+plot_utci <- function(data, region) {
+  ggplot(data, aes(x = Date)) +
+    geom_line(aes(y = Mean, color = "Mean"), linewidth = 0.5) +
+    geom_line(aes(y = Min, color = "Minimum"), linewidth = 0.5) +
+    geom_line(aes(y = Max, color = "Maximum"), linewidth = 0.5) +
+    labs(title = region, x = "Year", y = "UTCI", color = "UTCI") +
+    scale_color_manual(
+      values = c("Minimum" = "blue", "Mean" = "black", "Maximum" = "red"),
+      breaks = c("Minimum", "Mean", "Maximum")
+    ) +
+    scale_y_continuous(
+      breaks = c(-40, -20, 0, 20, 40, 60),
+      limits = c(-40, 60), expand = expansion(mult = 0, add = 0)
+    ) +
+    scale_x_date(
+      limits = date_limits, date_breaks = "1 year",
+      date_labels = "%Y", expand = c(0, 0.02)
+    ) +
+    theme_minimal(base_size = 14) +
+    theme(
+      panel.border = element_rect(color = "black", fill = NA, linewidth = 1),
+      panel.grid = element_blank(),
+      plot.title = element_text(hjust = 0.5, face = "bold", size = 16),
+      legend.position = "bottom",
+      plot.margin = margin(t = 1, r = 20, b = 1, l = 5, unit = "pt")
+    )
+}
+
+UTCI_plot <- ggarrange(
+  plotlist = lapply(names(utci_list), function(region) {
+    plot_utci(utci_list[[region]], region)
+  }),
+  ncol = 1,
+  nrow = 3,
+  common.legend = TRUE,
+  legend = "bottom"
+)
+
+ggsave(
+  file.path(data_visualization_figure_dir, "Historical_UTCI.pdf"),
+  UTCI_plot, width = 9, height = 6, units = "in", dpi = 300
+)
+
+print(UTCI_plot)
+```

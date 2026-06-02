@@ -1,0 +1,287 @@
+---
+title: "Section C. Figures of specific lagged effects via DLNM"
+output: pdf_document
+---
+
+# Load packages
+```{r section-c-packages, message=FALSE, warning=FALSE, results='hide'}
+packages <- c(
+  "readxl", "forecast", "dlnm", "splines", "Metrics", "demography",
+  "tseries", "seastests"
+)
+invisible(lapply(packages, library, character.only = TRUE))
+```
+
+## Project root
+```{r section-c-project-root, message=FALSE, warning=FALSE, results='hide'}
+find_project_root <- function(start = getwd()) {
+  path <- normalizePath(start, mustWork = FALSE)
+  for (i in seq_len(8)) {
+    if (dir.exists(file.path(path, "Code")) && dir.exists(file.path(path, "Data"))) {
+      return(path)
+    }
+    parent <- dirname(path)
+    if (identical(parent, path)) break
+    path <- parent
+  }
+  stop("Set LC_DLNM_BASE_DIR to the project root.")
+}
+
+base_dir <- Sys.getenv("LC_DLNM_BASE_DIR")
+if (!nzchar(base_dir)) base_dir <- find_project_root()
+
+data_dir <- file.path(base_dir, "Data/Combined_data")
+function_dir <- file.path(base_dir, "Code/Function")
+```
+
+## Load data
+```{r section-c-load-data, message=FALSE, warning=FALSE, results='hide'}
+Y20_64 <- read_xlsx(file.path(data_dir, "Y20_64_combined.xlsx"))
+Y65_74 <- read_xlsx(file.path(data_dir, "Y65_74_combined.xlsx"))
+Y75_84 <- read_xlsx(file.path(data_dir, "Y75_84_combined.xlsx"))
+Y_GE85 <- read_xlsx(file.path(data_dir, "Y_GE85_combined.xlsx"))
+
+age_columns <- c("Y20_64", "Y65_74", "Y75_84", "Y_GE85")
+age_titles <- c("Age 20-64", "Age 65-74", "Age 75-84", "Age 85+")
+
+region_specs <- list(
+  Athens = list(death_col = 3, exposure_col = 9, source = "Attiki"),
+  Lisbon = list(death_col = 4, exposure_col = 10, source = "Lisbon"),
+  Rome = list(death_col = 6, exposure_col = 12, source = "Roma")
+)
+```
+
+## Mortality and heat/cold wave inputs
+```{r section-c-inputs, message=FALSE, warning=FALSE, results='hide'}
+build_rate_matrix <- function(spec) {
+  out <- cbind(
+    Y20_64[[spec$death_col]] / Y20_64[[spec$exposure_col]],
+    Y65_74[[spec$death_col]] / Y65_74[[spec$exposure_col]],
+    Y75_84[[spec$death_col]] / Y75_84[[spec$exposure_col]],
+    Y_GE85[[spec$death_col]] / Y_GE85[[spec$exposure_col]]
+  )
+  colnames(out) <- age_columns
+  out * 52
+}
+
+build_wave_data <- function(region, spec) {
+  out <- data.frame(
+    hot_wave = Y20_64[[paste0(spec$source, "_hot_wave3")]],
+    cold_wave = Y20_64[[paste0(spec$source, "_cold_wave3")]]
+  )
+  colnames(out) <- c(paste0(region, "_hot_wave3"),
+                     paste0(region, "_cold_wave3"))
+  out
+}
+
+dat_list <- lapply(region_specs, build_rate_matrix)
+wave_list <- Map(build_wave_data, names(region_specs), region_specs)
+
+Athens <- dat_list$Athens
+Lisbon <- dat_list$Lisbon
+Rome <- dat_list$Rome
+
+Athens_wave <- wave_list$Athens
+Lisbon_wave <- wave_list$Lisbon
+Rome_wave <- wave_list$Rome
+```
+
+## Cross-basis matrices
+```{r section-c-crossbasis, message=FALSE, warning=FALSE, results='hide'}
+source(file.path(function_dir, "crossbasis_mixed_frequency.R"))
+
+utci_list <- list(
+  Athens = load_crossbasis_history(base_dir, "Athens", "Attiki"),
+  Lisbon = load_crossbasis_history(base_dir, "Lisbon", "Lisbon"),
+  Rome = load_crossbasis_history(base_dir, "Rome", "Roma")
+)
+
+make_crossbasis <- function(utci) {
+  varknots <- equalknots(utci, fun = "ns", df = 3, degree = 3)
+  lagknots <- logknots(21, fun = "ns", df = 3)
+  crossbasis(
+    utci,
+    lag = 21,
+    argvar = list(fun = "ns", knots = varknots),
+    arglag = list(knots = lagknots, df = 3)
+  )
+}
+
+cb_list <- lapply(utci_list, make_crossbasis)
+
+Athens_cb <- cb_list$Athens
+Lisbon_cb <- cb_list$Lisbon
+Rome_cb <- cb_list$Rome
+```
+
+## Load model functions
+```{r section-c-functions, message=FALSE, warning=FALSE, results='hide'}
+files <- list.files(function_dir, pattern = "\\.R$", full.names = TRUE)
+invisible(sapply(files, source))
+```
+
+## Fit DLNM--LC and DLNM--LL
+```{r section-c-fit-models, message=FALSE, warning=FALSE, results='hide'}
+invisible(capture.output({
+  DLNM_LC_Athens_fit <- DLNM_LC(
+    Athens, Athens_cb, wave_data = Athens_wave,
+    tol = 1e-2, max_iter = 20, region = "Athens"
+  )
+  DLNM_LC_Lisbon_fit <- DLNM_LC(
+    Lisbon, Lisbon_cb, wave_data = Lisbon_wave,
+    tol = 1e-2, max_iter = 20, region = "Lisbon"
+  )
+  DLNM_LC_Rome_fit <- DLNM_LC(
+    Rome, Rome_cb, wave_data = Rome_wave,
+    tol = 1e-2, max_iter = 20, region = "Rome"
+  )
+
+  DLNM_LL_fit <- DLNM_LL(
+    dat_list = dat_list,
+    wave_list = wave_list,
+    cb_list = cb_list,
+    tol = 1e-2,
+    max_iter = 20
+  )
+}))
+```
+
+## DLNM residual components
+```{r section-c-dlnm-components, message=FALSE, warning=FALSE, results='hide'}
+lc_temp <- list(
+  Athens = as.data.frame(log(as.matrix(Athens)) - DLNM_LC_Athens_fit$final_LC$log_fitted),
+  Lisbon = as.data.frame(log(as.matrix(Lisbon)) - DLNM_LC_Lisbon_fit$final_LC$log_fitted),
+  Rome = as.data.frame(log(as.matrix(Rome)) - DLNM_LC_Rome_fit$final_LC$log_fitted)
+)
+
+ll_temp <- list(
+  Athens = as.data.frame(log(as.matrix(Athens)) - DLNM_LL_fit$final_LL$log_fitted$Athens),
+  Lisbon = as.data.frame(log(as.matrix(Lisbon)) - DLNM_LL_fit$final_LL$log_fitted$Lisbon),
+  Rome = as.data.frame(log(as.matrix(Rome)) - DLNM_LL_fit$final_LL$log_fitted$Rome)
+)
+
+for (region in names(region_specs)) {
+  colnames(lc_temp[[region]]) <- age_columns
+  colnames(ll_temp[[region]]) <- age_columns
+}
+```
+
+## Fit DLNM components for lagged-effect plots
+```{r section-c-fit-dlnm-components, message=FALSE, warning=FALSE, results='hide'}
+lc_centres <- list(
+  Athens = c(Y20_64 = 22, Y65_74 = 22, Y75_84 = 20, Y_GE85 = 20),
+  Lisbon = c(Y20_64 = 22, Y65_74 = 22, Y75_84 = 20, Y_GE85 = 20),
+  Rome = c(Y20_64 = 18, Y65_74 = 20, Y75_84 = 22, Y_GE85 = 22)
+)
+
+ll_centres <- list(
+  Athens = c(Y20_64 = 22, Y65_74 = 22, Y75_84 = 20, Y_GE85 = 20),
+  Lisbon = c(Y20_64 = 22, Y65_74 = 22, Y75_84 = 20, Y_GE85 = 20),
+  Rome = c(Y20_64 = 18, Y65_74 = 20, Y75_84 = 20, Y_GE85 = 20)
+)
+
+fit_dlnm_predictions <- function(temp_data, cb, wave_data, centres, region) {
+  hot_col <- paste0(region, "_hot_wave3")
+  cold_col <- paste0(region, "_cold_wave3")
+
+  setNames(lapply(age_columns, function(age_col) {
+    fit <- glm(
+      temp_data[[age_col]] ~ cb + wave_data[[hot_col]] + wave_data[[cold_col]],
+      family = gaussian()
+    )
+    crosspred(
+      cb,
+      fit,
+      cen = centres[[age_col]],
+      at = -5:40,
+      model.link = "log"
+    )
+  }), age_columns)
+}
+
+lc_pred <- list(
+  Athens = fit_dlnm_predictions(lc_temp$Athens, Athens_cb, Athens_wave,
+                                lc_centres$Athens, "Athens"),
+  Lisbon = fit_dlnm_predictions(lc_temp$Lisbon, Lisbon_cb, Lisbon_wave,
+                                lc_centres$Lisbon, "Lisbon"),
+  Rome = fit_dlnm_predictions(lc_temp$Rome, Rome_cb, Rome_wave,
+                              lc_centres$Rome, "Rome")
+)
+
+ll_pred <- list(
+  Athens = fit_dlnm_predictions(ll_temp$Athens, Athens_cb, Athens_wave,
+                                ll_centres$Athens, "Athens"),
+  Lisbon = fit_dlnm_predictions(ll_temp$Lisbon, Lisbon_cb, Lisbon_wave,
+                                ll_centres$Lisbon, "Lisbon"),
+  Rome = fit_dlnm_predictions(ll_temp$Rome, Rome_cb, Rome_wave,
+                              ll_centres$Rome, "Rome")
+)
+```
+
+## Plot helper
+```{r section-c-plot-helper, message=FALSE, warning=FALSE, results='hide'}
+plot_lag_effects <- function(predictions, ylim) {
+  par(
+    mfcol = c(2, 4),
+    mar = c(5, 5, 2, 1),
+    oma = c(1, 1, 3, 1),
+    ps = 16,
+    cex.lab = 1.2,
+    cex.axis = 1.2,
+    cex.main = 1.4,
+    font.main = 2
+  )
+
+  for (age_col in age_columns) {
+    plot(
+      predictions[[age_col]], "slices",
+      var = -5,
+      col = 1,
+      ylab = "RR",
+      ci.arg = list(density = 50, lwd = 2, col = "#AFEEEE"),
+      main = paste("UTCI = -5,", age_titles[[which(age_columns == age_col)]]),
+      ylim = ylim
+    )
+
+    plot(
+      predictions[[age_col]], "slices",
+      var = 35,
+      col = 1,
+      ylab = "RR",
+      ci.arg = list(density = 50, lwd = 2, col = "#AFEEEE"),
+      main = paste("UTCI = 35,", age_titles[[which(age_columns == age_col)]]),
+      ylim = ylim
+    )
+  }
+}
+```
+
+## Figure C.1. DLNM--LC lagged effects for Athens
+```{r section-c-lc-athens, fig.width=16, fig.height=8, message=FALSE, warning=FALSE, results='hide'}
+plot_lag_effects(lc_pred$Athens, ylim = c(0.98, 1.05))
+```
+
+## Figure C.2. DLNM--LL lagged effects for Athens
+```{r section-c-ll-athens, fig.width=16, fig.height=8, message=FALSE, warning=FALSE, results='hide'}
+plot_lag_effects(ll_pred$Athens, ylim = c(0.98, 1.05))
+```
+
+## Figure C.3. DLNM--LC lagged effects for Lisbon
+```{r section-c-lc-lisbon, fig.width=16, fig.height=8, message=FALSE, warning=FALSE, results='hide'}
+plot_lag_effects(lc_pred$Lisbon, ylim = c(0.95, 1.2))
+```
+
+## Figure C.4. DLNM--LL lagged effects for Lisbon
+```{r section-c-ll-lisbon, fig.width=16, fig.height=8, message=FALSE, warning=FALSE, results='hide'}
+plot_lag_effects(ll_pred$Lisbon, ylim = c(0.95, 1.2))
+```
+
+## Figure C.5. DLNM--LC lagged effects for Rome
+```{r section-c-lc-rome, fig.width=16, fig.height=8, message=FALSE, warning=FALSE, results='hide'}
+plot_lag_effects(lc_pred$Rome, ylim = c(0.95, 1.1))
+```
+
+## Figure C.6. DLNM--LL lagged effects for Rome
+```{r section-c-ll-rome, fig.width=16, fig.height=8, message=FALSE, warning=FALSE, results='hide'}
+plot_lag_effects(ll_pred$Rome, ylim = c(0.95, 1.1))
+```

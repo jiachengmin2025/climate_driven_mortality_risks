@@ -1,0 +1,152 @@
+---
+title: "RCP Simulation Visualization"
+output: pdf_document
+params:
+  save_plots: true
+  start_year: 2031
+  start_index: 570
+  dpi: 1000
+---
+
+## Setup
+```{r, warning=FALSE, message=FALSE}
+knitr::opts_chunk$set(warning = FALSE, message = FALSE)
+
+packages <- c("ggplot2", "dplyr", "patchwork")
+invisible(lapply(packages, library, character.only = TRUE))
+
+find_project_root <- function(start = getwd()) {
+  path <- normalizePath(start, mustWork = FALSE)
+  for (i in seq_len(8)) {
+    if (dir.exists(file.path(path, "Code")) && dir.exists(file.path(path, "Data"))) return(path)
+    parent <- dirname(path)
+    if (identical(parent, path)) break
+    path <- parent
+  }
+  stop("Set LC_DLNM_BASE_DIR to the project root.")
+}
+base_dir <- Sys.getenv("LC_DLNM_BASE_DIR")
+if (!nzchar(base_dir)) base_dir <- find_project_root()
+invisible(lapply(list.files(file.path(base_dir, "Code/Function"),
+                            pattern = "\\.R$", full.names = TRUE), source))
+
+simulation_dir <- file.path(base_dir, "Results/Simulated_mortality_rates")
+figure_dir <- file.path(base_dir, "Figures/RCP_Simulation/Overall")
+
+age_labels <- c(
+  Y20_64 = "20-64",
+  Y65_74 = "65-74",
+  Y75_84 = "75-84",
+  Y_GE85 = "85+"
+)
+
+scenario_labels <- c(
+  rcp26 = "RCP 2.6",
+  rcp85 = "RCP 8.5"
+)
+
+scenario_colors <- c(
+  "RCP 2.6" = "#007bbd",
+  "RCP 8.5" = "#B7282E"
+)
+```
+
+## Load Simulation Results
+```{r}
+simulation_results <- list(
+  LC = setNames(
+    lapply(names(scenario_labels), function(scenario) {
+      load_rcp_simulation("LC", scenario, simulation_dir)
+    }),
+    scenario_labels
+  ),
+  LL = setNames(
+    lapply(names(scenario_labels), function(scenario) {
+      load_rcp_simulation("LL", scenario, simulation_dir)
+    }),
+    scenario_labels
+  )
+)
+```
+
+## Plot Settings
+```{r}
+model_configs <- list(
+  LC = list(
+    output_dir = file.path(figure_dir, "DLNM_LC"),
+    filenames = c(
+      Athens = "Athens_all_scenarios_no_scale_line.pdf",
+      Lisbon = "Lisbon_all_scenarios_no_scale_line.pdf",
+      Rome = "Rome_all_scenarios_no_scale_line.pdf"
+    ),
+    ncol = 2,
+    width = 10,
+    height = 6,
+    x_limits = c(params$start_year, 2046),
+    x_breaks = c(2031, 2036, 2041, 2046),
+    y_expand = expansion(mult = c(0.2, 0.2)),
+    major_y_grid = element_line(color = "gray80"),
+    mean_size = 0.4,
+    interval_size = 0.3,
+    subtitle_size = 14,
+    legend_text_size = 11
+  ),
+  LL = list(
+    output_dir = file.path(figure_dir, "DLNM_LL"),
+    filenames = c(
+      Athens = "Athens_weekly_sim.pdf",
+      Lisbon = "Lisbon_weekly_sim.pdf",
+      Rome = "Rome_weekly_sim.pdf"
+    ),
+    ncol = 2,
+    width = 10,
+    height = 6,
+    x_limits = c(params$start_year, 2046),
+    x_breaks = c(2031, 2036, 2041, 2046),
+    y_expand = expansion(mult = c(0.2, 0.2)),
+    major_y_grid = element_line(color = "gray80"),
+    mean_size = 0.4,
+    interval_size = 0.3,
+    subtitle_size = 14,
+    legend_text_size = 11
+  )
+)
+```
+
+## DLNM-LC Visualisation
+```{r}
+LC_plots <- setNames(lapply(rcp_output_region_names, function(region) {
+  plot_rcp_region_model(
+    datasets = simulation_results$LC,
+    region = region,
+    config = model_configs$LC,
+    start_index = params$start_index,
+    start_year = params$start_year,
+    age_labels = age_labels,
+    scenario_colors = scenario_colors,
+    save_plots = params$save_plots,
+    dpi = params$dpi
+  )
+}), rcp_output_region_names)
+
+LC_plots
+```
+
+## DLNM-LL Visualisation
+```{r}
+LL_plots <- setNames(lapply(rcp_output_region_names, function(region) {
+  plot_rcp_region_model(
+    datasets = simulation_results$LL,
+    region = region,
+    config = model_configs$LL,
+    start_index = params$start_index,
+    start_year = params$start_year,
+    age_labels = age_labels,
+    scenario_colors = scenario_colors,
+    save_plots = params$save_plots,
+    dpi = params$dpi
+  )
+}), rcp_output_region_names)
+
+LL_plots
+```

@@ -1,0 +1,127 @@
+---
+title: "DLNM-LC RCP Simulation"
+output: pdf_document
+params:
+  scenario: "all"
+  scenarios:
+    - "rcp26"
+    - "rcp85"
+  nsim: 10000
+  simulation_weeks: 1352
+  run_simulation: true
+---
+
+## Setup
+```{r, warning=FALSE, message=FALSE}
+packages <- c(
+  "readxl", "forecast", "dlnm", "splines", "MASS", "astsa"
+)
+invisible(lapply(packages, library, character.only = TRUE))
+
+find_project_root <- function(start = getwd()) {
+  path <- normalizePath(start, mustWork = FALSE)
+  for (i in seq_len(8)) {
+    if (dir.exists(file.path(path, "Code")) && dir.exists(file.path(path, "Data"))) return(path)
+    parent <- dirname(path)
+    if (identical(parent, path)) break
+    path <- parent
+  }
+  stop("Set LC_DLNM_BASE_DIR to the project root.")
+}
+base_dir <- Sys.getenv("LC_DLNM_BASE_DIR")
+if (!nzchar(base_dir)) base_dir <- find_project_root()
+available_scenarios <- c("rcp26", "rcp85")
+default_params <- list(
+  scenario = "all",
+  scenarios = available_scenarios,
+  nsim = 10000,
+  simulation_weeks = 1352,
+  run_simulation = TRUE
+)
+rmd_params <- if (exists("params") && !is.null(params)) {
+  modifyList(default_params, as.list(params))
+} else default_params
+
+if (!is.null(rmd_params$scenario) && !identical(rmd_params$scenario, "all")) {
+  scenarios <- rmd_params$scenario
+} else {
+  scenarios <- rmd_params$scenarios
+}
+scenarios <- unname(unlist(scenarios))
+if (!all(scenarios %in% available_scenarios)) {
+  stop(
+    "Unknown scenario(s): ",
+    paste(setdiff(scenarios, available_scenarios), collapse = ", ")
+  )
+}
+
+nsim <- rmd_params$nsim
+simulation_weeks <- rmd_params$simulation_weeks
+run_simulation <- isTRUE(rmd_params$run_simulation)
+
+invisible(lapply(list.files(file.path(base_dir, "Code/Function"),
+                            pattern = "\\.R$", full.names = TRUE), source))
+```
+
+## Inputs
+```{r}
+historical_inputs <- build_historical_inputs(base_dir)
+dat_list <- historical_inputs$dat_list
+wave_list <- historical_inputs$wave_list
+
+cb_list <- load_historical_cb_list(
+  base_dir,
+  lag_days = 21,
+  var_df = 2,
+  lag_df = 2,
+  degree = 3,
+  legacy_lag_knots = TRUE
+)
+```
+
+## Fit DLNM-LC
+```{r}
+DLNM_LC_models <- lapply(rcp_internal_region_names, function(region) {
+  DLNM_LC(
+    dat = dat_list[[region]],
+    cross_matrix = cb_list[[region]],
+    wave_data = wave_list[[region]],
+    tol = 1e-2,
+    max_iter = 20,
+    region = region
+  )
+})
+names(DLNM_LC_models) <- rcp_internal_region_names
+
+dlnm_coef <- lapply(DLNM_LC_models, `[[`, "dlnm_coef")
+dlnm_vcov <- lapply(DLNM_LC_models, `[[`, "dlnm_vcov")
+```
+
+## SARIMA Inputs For Kappa
+```{r}
+sarima_inputs <- lapply(scenarios, function(scenario) {
+  write_legacy_sarima_inputs(
+    model_type = "DLNM_LC",
+    scenario = scenario,
+    base_dir = base_dir
+  )
+})
+names(sarima_inputs) <- scenarios
+sarima_inputs
+```
+
+## DLNM Component And Final Simulated Mortality
+```{r, eval=isTRUE(get0("run_simulation", ifnotfound = TRUE))}
+lc_simulation_outputs <- do.call(rbind, lapply(scenarios, function(scenario) {
+  run_lc_rcp_scenario(
+    scenario = scenario,
+    DLNM_LC_models = DLNM_LC_models,
+    dlnm_coef = dlnm_coef,
+    dlnm_vcov = dlnm_vcov,
+    base_dir = base_dir,
+    simulation_weeks = simulation_weeks,
+    nsim = nsim
+  )
+}))
+lc_simulation_outputs
+```

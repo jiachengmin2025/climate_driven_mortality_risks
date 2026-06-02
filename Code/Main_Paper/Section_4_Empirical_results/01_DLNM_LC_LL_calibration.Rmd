@@ -1,0 +1,537 @@
+---
+title: "DLNM-LC-LL Calibration"
+output: pdf_document
+header-includes:
+  - \usepackage{float}
+  - \usepackage{booktabs}
+  - \usepackage{multirow}
+---
+
+# Load Packages
+```{r packages, message=FALSE, warning=FALSE, results='hide'}
+packages <- c(
+  "readxl", "ggplot2", "forecast", "dplyr", "writexl", "tseries",
+  "hwwntest", "dlnm", "splines", "ISOweek", "mgcv", "Metrics",
+  "demography", "seastests", "MTS", "reshape2", "astsa", "MASS",
+  "patchwork", "scales", "tidyr"
+)
+invisible(lapply(packages, library, character.only = TRUE))
+```
+
+## Project Root
+```{r project-root, message=FALSE, warning=FALSE, results='hide'}
+find_project_root <- function(start = getwd()) {
+  path <- normalizePath(start, mustWork = FALSE)
+  for (i in seq_len(8)) {
+    if (dir.exists(file.path(path, "Code")) && dir.exists(file.path(path, "Data"))) {
+      return(path)
+    }
+    parent <- dirname(path)
+    if (identical(parent, path)) break
+    path <- parent
+  }
+  stop("Set LC_DLNM_BASE_DIR to the project root.")
+}
+
+base_dir <- Sys.getenv("LC_DLNM_BASE_DIR")
+if (!nzchar(base_dir)) base_dir <- find_project_root()
+
+combined_dir <- file.path(base_dir, "Data/Combined_data")
+function_dir <- file.path(base_dir, "Code/Function")
+figure_calibration_dir <- file.path(base_dir, "Figures/Calibration")
+figure_overall_dir <- file.path(base_dir, "Figures/DLNM/Overall")
+results_dir <- file.path(base_dir, "Results/Calibration")
+
+dir.create(figure_calibration_dir, recursive = TRUE, showWarnings = FALSE)
+dir.create(figure_overall_dir, recursive = TRUE, showWarnings = FALSE)
+dir.create(results_dir, recursive = TRUE, showWarnings = FALSE)
+```
+
+## Load Data
+```{r load-data, message=FALSE, warning=FALSE, results='hide'}
+files <- list.files(function_dir, pattern = "\\.R$", full.names = TRUE)
+invisible(sapply(files, source))
+
+age_names <- c("Y20_64", "Y65_74", "Y75_84", "Y_GE85")
+age_labels <- c(Y20_64 = "20--64", Y65_74 = "65--74",
+                Y75_84 = "75--84", Y_GE85 = "85+")
+age_titles <- c(Y20_64 = "Age 20-64", Y65_74 = "Age 65-74",
+                Y75_84 = "Age 75-84", Y_GE85 = "Age 85+")
+regions <- c("Athens", "Lisbon", "Rome")
+
+Y20_64 <- read_xlsx(file.path(combined_dir, "Y20_64_combined.xlsx"))
+Y65_74 <- read_xlsx(file.path(combined_dir, "Y65_74_combined.xlsx"))
+Y75_84 <- read_xlsx(file.path(combined_dir, "Y75_84_combined.xlsx"))
+Y_GE85 <- read_xlsx(file.path(combined_dir, "Y_GE85_combined.xlsx"))
+
+Athens <- cbind(Y20_64[[3]] / Y20_64[[9]], Y65_74[[3]] / Y65_74[[9]],
+                Y75_84[[3]] / Y75_84[[9]], Y_GE85[[3]] / Y_GE85[[9]]) * 52
+Lisbon <- cbind(Y20_64[[4]] / Y20_64[[10]], Y65_74[[4]] / Y65_74[[10]],
+                Y75_84[[4]] / Y75_84[[10]], Y_GE85[[4]] / Y_GE85[[10]]) * 52
+Rome <- cbind(Y20_64[[6]] / Y20_64[[12]], Y65_74[[6]] / Y65_74[[12]],
+              Y75_84[[6]] / Y75_84[[12]], Y_GE85[[6]] / Y_GE85[[12]]) * 52
+colnames(Athens) <- colnames(Lisbon) <- colnames(Rome) <- age_names
+
+Athens_wave <- data.frame(Athens_hot_wave3 = Y20_64$Attiki_hot_wave3,
+                          Athens_cold_wave3 = Y20_64$Attiki_cold_wave3)
+Lisbon_wave <- data.frame(Lisbon_hot_wave3 = Y20_64$Lisbon_hot_wave3,
+                          Lisbon_cold_wave3 = Y20_64$Lisbon_cold_wave3)
+Rome_wave <- data.frame(Rome_hot_wave3 = Y20_64$Roma_hot_wave3,
+                        Rome_cold_wave3 = Y20_64$Roma_cold_wave3)
+
+dat_list <- list(Athens = Athens, Lisbon = Lisbon, Rome = Rome)
+wave_list <- list(Athens = Athens_wave, Lisbon = Lisbon_wave, Rome = Rome_wave)
+```
+
+## Cross-Basis Matrices
+```{r crossbasis-matrices, message=FALSE, warning=FALSE, results='hide'}
+build_crossbasis_matrices(base_dir)
+
+make_cb <- function(utci_ext) {
+  varknots <- equalknots(utci_ext, fun = "ns", df = 3, degree = 3)
+  lagknots <- logknots(21, fun = "ns", df = 3)
+  crossbasis(
+    utci_ext,
+    lag = 21,
+    argvar = list(fun = "ns", knots = varknots),
+    arglag = list(knots = lagknots, df = 3)
+  )
+}
+
+UTCI_ext.Athens <- load_crossbasis_history(base_dir, "Athens", "Attiki")
+UTCI_ext.Lisbon <- load_crossbasis_history(base_dir, "Lisbon", "Lisbon")
+UTCI_ext.Rome <- load_crossbasis_history(base_dir, "Rome", "Roma")
+
+Athens_cb <- make_cb(UTCI_ext.Athens)
+Lisbon_cb <- make_cb(UTCI_ext.Lisbon)
+Rome_cb <- make_cb(UTCI_ext.Rome)
+cb_list <- list(Athens = Athens_cb, Lisbon = Lisbon_cb, Rome = Rome_cb)
+```
+
+## Fit DLNM--LC And DLNM--LL
+```{r fit-models, message=FALSE, warning=FALSE, results='hide'}
+invisible(capture.output({
+  b <- DLNM_LL(dat_list = dat_list, wave_list = wave_list,
+                 cb_list = cb_list, tol = 1e-2, max_iter = 20)
+  b1 <- DLNM_LC(Athens, Athens_cb, wave_data = Athens_wave,
+                  tol = 1e-2, max_iter = 20, region = "Athens")
+  b2 <- DLNM_LC(Lisbon, Lisbon_cb, wave_data = Lisbon_wave,
+                  tol = 1e-2, max_iter = 20, region = "Lisbon")
+  b3 <- DLNM_LC(Rome, Rome_cb, wave_data = Rome_wave,
+                  tol = 1e-2, max_iter = 20, region = "Rome")
+}))
+
+saveRDS(list(b = b, b1 = b1, b2 = b2, b3 = b3),
+        file.path(results_dir, "DLNM_LC_LL_calibration_models.rds"))
+```
+
+## Figure 3. Fitted time-varying factors in LC and DLNM--LC
+```{r figure-3-lc-time-varying-factors, fig.width=12, fig.height=6, message=FALSE, warning=FALSE, results='hide'}
+DLNM_LC_models <- list(Athens = b1, Lisbon = b2, Rome = b3)
+
+plot_lc_kappa <- function(region_name, model, model_type, y_limits) {
+  df <- data.frame(
+    time = seq(as.Date("2015-01-01"), as.Date("2019-12-30"), length.out = 260),
+    kappa_t = if (model_type == "LC") {
+      as.numeric(model$baseline_LC$k_t)
+    } else {
+      as.numeric(model$final_LC$k_t)
+    },
+    Model = model_type
+  )
+
+  ggplot(df, aes(x = time, y = kappa_t, color = Model)) +
+    geom_line(size = 0.5) +
+    scale_color_manual(name = "",
+                       values = if (model_type == "LC") c("LC" = "black")
+                       else c("DLNM-LC" = "darkred")) +
+    scale_x_date(limits = as.Date(c("2015-01-01", "2020-01-01")),
+                 date_breaks = "1 year", date_labels = "%Y", expand = c(0, 0.01)) +
+    scale_y_continuous(limits = y_limits) +
+    labs(title = bquote(bold(.(region_name))), x = "Year",
+         y = expression(hat(kappa)(t))) +
+    theme_minimal() +
+    theme(
+      plot.title = element_text(hjust = 0.5, face = "bold", size = 18),
+      axis.title = element_text(size = 16),
+      axis.text = element_text(size = 14),
+      legend.text = element_text(size = 14),
+      panel.grid = element_blank(),
+      panel.border = element_rect(color = "black", fill = NA, size = 1),
+      legend.position = "none"
+    )
+}
+
+all_kappa_values <- unlist(lapply(DLNM_LC_models, function(model) {
+  c(model$baseline_LC$k_t, model$final_LC$k_t)
+}))
+y_limits <- range(all_kappa_values, na.rm = TRUE)
+
+LC_plots <- (
+  plot_lc_kappa("Athens", b1, "LC", y_limits) /
+    plot_lc_kappa("Lisbon", b2, "LC", y_limits) /
+    plot_lc_kappa("Rome", b3, "LC", y_limits)
+) + plot_layout(guides = "collect") & theme(legend.position = "bottom")
+
+DLNM_LC_plots <- (
+  plot_lc_kappa("Athens", b1, "DLNM-LC", y_limits) /
+    plot_lc_kappa("Lisbon", b2, "DLNM-LC", y_limits) /
+    plot_lc_kappa("Rome", b3, "DLNM-LC", y_limits)
+) + plot_layout(guides = "collect") & theme(legend.position = "bottom")
+
+single_model_k_plot <- (LC_plots | DLNM_LC_plots) &
+  theme(plot.margin = grid::unit(c(5, 20, 5, 5), "pt"))
+
+ggsave(file.path(figure_calibration_dir, "single_model_k.pdf"),
+       single_model_k_plot, width = 12, height = 6, dpi = 300)
+print(single_model_k_plot)
+```
+
+## Figure 4. Fitted time-varying factors in LL and DLNM--LL
+```{r figure-4-ll-time-varying-factors, fig.width=12, fig.height=8, message=FALSE, warning=FALSE, results='hide'}
+plot_ll_kappa <- function(region_name, base_kt, final_kt, model_type, y_limits) {
+  df <- data.frame(
+    time = seq(as.Date("2015-01-01"), as.Date("2019-12-30"), length.out = 260),
+    kappa_t = if (model_type == "LL") as.numeric(base_kt) else as.numeric(final_kt),
+    Model = model_type
+  )
+
+  ggplot(df, aes(x = time, y = kappa_t, color = Model)) +
+    geom_line(size = 0.5) +
+    scale_color_manual(name = "",
+                       values = if (model_type == "LL") c("LL" = "black")
+                       else c("DLNM-LL" = "darkred")) +
+    scale_x_date(limits = as.Date(c("2015-01-01", "2020-01-01")),
+                 date_breaks = "1 year", date_labels = "%Y", expand = c(0, 0.01)) +
+    scale_y_continuous(limits = y_limits) +
+    labs(title = bquote(bold(.(region_name))), x = "Year",
+         y = expression(hat(kappa)(t))) +
+    theme_minimal() +
+    theme(
+      plot.title = element_text(hjust = 0.5, face = "bold", size = 18),
+      axis.title = element_text(size = 16),
+      axis.text = element_text(size = 14),
+      legend.text = element_text(size = 14),
+      panel.grid = element_blank(),
+      panel.border = element_rect(color = "black", fill = NA, size = 1),
+      legend.position = "none"
+    )
+}
+
+all_kappa_values <- c(
+  b$baseline_LL$Kt, b$final_LL$Kt,
+  b$baseline_LL$kt$Athens, b$final_LL$kt$Athens,
+  b$baseline_LL$kt$Lisbon, b$final_LL$kt$Lisbon,
+  b$baseline_LL$kt$Rome, b$final_LL$kt$Rome
+)
+y_limits <- range(all_kappa_values, na.rm = TRUE)
+
+LL_plots <- (
+  plot_ll_kappa("Common Trend", b$baseline_LL$Kt, b$final_LL$Kt, "LL", y_limits) /
+    plot_ll_kappa("Athens", b$baseline_LL$kt$Athens, b$final_LL$kt$Athens, "LL", y_limits) /
+    plot_ll_kappa("Lisbon", b$baseline_LL$kt$Lisbon, b$final_LL$kt$Lisbon, "LL", y_limits) /
+    plot_ll_kappa("Rome", b$baseline_LL$kt$Rome, b$final_LL$kt$Rome, "LL", y_limits)
+) + plot_layout(guides = "collect") & theme(legend.position = "bottom")
+
+DLNM_LL_plots <- (
+  plot_ll_kappa("Common Trend", b$baseline_LL$Kt, b$final_LL$Kt, "DLNM-LL", y_limits) /
+    plot_ll_kappa("Athens", b$baseline_LL$kt$Athens, b$final_LL$kt$Athens, "DLNM-LL", y_limits) /
+    plot_ll_kappa("Lisbon", b$baseline_LL$kt$Lisbon, b$final_LL$kt$Lisbon, "DLNM-LL", y_limits) /
+    plot_ll_kappa("Rome", b$baseline_LL$kt$Rome, b$final_LL$kt$Rome, "DLNM-LL", y_limits)
+) + plot_layout(guides = "collect") & theme(legend.position = "bottom")
+
+multi_model_k_plot <- (LL_plots | DLNM_LL_plots) &
+  theme(plot.margin = grid::unit(c(5, 20, 5, 5), "pt"))
+
+ggsave(file.path(figure_calibration_dir, "multi_model_k.pdf"),
+       multi_model_k_plot, width = 12, height = 8, dpi = 300)
+print(multi_model_k_plot)
+```
+
+## DLNM Climate-Driven Components
+```{r dlnm-climate-components, message=FALSE, warning=FALSE, results='hide'}
+LC_models <- list(Athens = b1, Lisbon = b2, Rome = b3)
+LC_temp <- LL_temp <- theta_LC <- theta_LL <- list()
+
+for (region in regions) {
+  LC_model <- LC_models[[region]]
+  LC_a <- as.data.frame(matrix(rep(LC_model$final_LC$a_x, times = 260),
+                               ncol = 4, byrow = TRUE))
+  LL_a <- as.data.frame(matrix(rep(b$final_LL$Ax[[region]], times = 260),
+                               ncol = 4, byrow = TRUE))
+
+  LC_temp[[region]] <- as.data.frame(
+    log(as.matrix(dat_list[[region]])) - LC_model$final_LC$log_fitted
+  )
+  LL_temp[[region]] <- as.data.frame(
+    log(as.matrix(dat_list[[region]])) - b$final_LL$log_fitted[[region]]
+  )
+  colnames(LC_temp[[region]]) <- colnames(LL_temp[[region]]) <- age_names
+
+  LC_ratio <- exp(LC_model$log_fitted - LC_a - LC_model$final_LC$std_mxt)
+  LL_ratio <- exp(b$log_fitted[[region]] - LL_a - b$final_LL$std_mxti[[region]])
+  colnames(LC_ratio) <- colnames(LL_ratio) <- age_names
+
+  theta_LC[[region]] <- 1 - 1 / LC_ratio
+  theta_LL[[region]] <- 1 - 1 / LL_ratio
+}
+```
+
+## Figure 5. Overall cumulative UTCI effects
+```{r figure-5-overall-cumulative-effects, message=FALSE, warning=FALSE, results='hide'}
+overall_centers <- list(
+  Athens = c(Y20_64 = 22, Y65_74 = 22, Y75_84 = 20, Y_GE85 = 20),
+  Lisbon = c(Y20_64 = 22, Y65_74 = 22, Y75_84 = 20, Y_GE85 = 20),
+  Rome = c(Y20_64 = 18, Y65_74 = 20, Y75_84 = 20, Y_GE85 = 20)
+)
+
+overall_ylim <- list(
+  Athens = list(Y20_64 = c(0.9, 1.8), Y65_74 = c(0.9, 1.8),
+                Y75_84 = c(0.9, 1.8), Y_GE85 = c(0.9, 1.8)),
+  Lisbon = list(Y20_64 = c(0.9, 1.8), Y65_74 = c(0.9, 1.8),
+                Y75_84 = c(0.9, 1.8), Y_GE85 = c(0.9, 3.5)),
+  Rome = list(Y20_64 = c(0.9, 1.8), Y65_74 = c(0.9, 1.8),
+              Y75_84 = c(0.9, 1.8), Y_GE85 = c(0.9, 1.8))
+)
+
+fit_overall_pred <- function(region, age_group) {
+  cb <- cb_list[[region]]
+  wave_data <- wave_list[[region]]
+  y <- LL_temp[[region]][[age_group]]
+  fit <- glm(
+    y ~ cb +
+      wave_data[[paste0(region, "_hot_wave3")]] +
+      wave_data[[paste0(region, "_cold_wave3")]],
+    family = gaussian()
+  )
+  crosspred(cb, fit, cen = overall_centers[[region]][[age_group]],
+            at = -5:40, model.link = "log")
+}
+
+plot_overall_region <- function(region) {
+  predictions <- setNames(lapply(age_names, function(age_group) {
+    fit_overall_pred(region, age_group)
+  }), age_names)
+
+  pdf(file.path(figure_overall_dir, paste0(region, ".pdf")), width = 10, height = 6.18)
+  par(mfrow = c(2, 2), mar = c(5, 5, 2, 1), oma = c(1, 1, 3, 1),
+      cex.lab = 2, cex.axis = 2, cex.main = 2)
+  for (age_group in age_names) {
+    plot(
+      predictions[[age_group]], "overall",
+      xlab = "UTCI", ylab = "RR", xlim = c(-5, 40),
+      ylim = overall_ylim[[region]][[age_group]],
+      ci.arg = list(lty = 2, lwd = 2, col = "#FFBE7A"),
+      main = age_titles[[age_group]]
+    )
+  }
+  dev.off()
+  predictions
+}
+
+overall_predictions <- setNames(lapply(regions, plot_overall_region), regions)
+```
+
+```{r figure-5-display, out.width='90%', fig.align='center'}
+knitr::include_graphics(file.path(figure_overall_dir,
+                                  c("Athens.pdf", "Lisbon.pdf", "Rome.pdf")))
+```
+
+## Table 1. HWD and CWD coefficients
+```{r table-1-hwd-cwd-coefficients, results='asis', message=FALSE, warning=FALSE}
+significance_stars <- function(p_value) {
+  ifelse(p_value < 0.01, "^{***}",
+         ifelse(p_value < 0.05, "^{**}",
+                ifelse(p_value < 0.1, "^{*}", "")))
+}
+
+format_beta <- function(estimate, p_value) {
+  paste0("$", formatC(estimate, format = "f", digits = 4),
+         significance_stars(p_value), "$")
+}
+
+fit_wave_model <- function(temp_data, region, age_group) {
+  cb <- cb_list[[region]]
+  wave_data <- wave_list[[region]]
+  y <- temp_data[[region]][[age_group]]
+  glm(
+    y ~ cb +
+      wave_data[[paste0(region, "_hot_wave3")]] +
+      wave_data[[paste0(region, "_cold_wave3")]],
+    family = gaussian()
+  )
+}
+
+extract_wave_terms <- function(model) {
+  coef_table <- summary(model)$coefficients
+  p_col <- grep("^Pr\\(", colnames(coef_table), value = TRUE)
+  terms <- c(
+    HWD = grep("hot_wave3", rownames(coef_table), value = TRUE),
+    CWD = grep("cold_wave3", rownames(coef_table), value = TRUE)
+  )
+  data.frame(
+    term = names(terms),
+    estimate = unname(coef_table[terms, "Estimate"]),
+    p_value = unname(coef_table[terms, p_col]),
+    formatted = format_beta(unname(coef_table[terms, "Estimate"]),
+                            unname(coef_table[terms, p_col])),
+    row.names = NULL
+  )
+}
+
+collect_wave_coef <- function(temp_data, model_label) {
+  rows <- list()
+  for (age_group in age_names) {
+    for (region in regions) {
+      wave_terms <- extract_wave_terms(fit_wave_model(temp_data, region, age_group))
+      rows[[length(rows) + 1]] <- data.frame(
+        age_group = age_labels[[age_group]],
+        model = model_label,
+        region = region,
+        wave_terms,
+        row.names = NULL
+      )
+    }
+  }
+  do.call(rbind, rows)
+}
+
+make_wave_coef_latex <- function(coef_table) {
+  get_cell <- function(age, model, region, term) {
+    cell <- coef_table[
+      coef_table$age_group == age & coef_table$model == model &
+        coef_table$region == region & coef_table$term == term,
+      "formatted"
+    ]
+    if (length(cell) == 0) return("")
+    cell[[1]]
+  }
+
+  lines <- c(
+    "\\begin{table}[H]",
+    "\\centering",
+    "\\renewcommand{\\arraystretch}{1.2}",
+    "\\resizebox{0.95\\textwidth}{!}{%",
+    "\\begin{tabular}{clllllll}",
+    "    \\toprule",
+    "    \\multirow{2}{*}{\\textbf{Age group}}",
+    "      & \\multirow{2}{*}{\\textbf{Model}}",
+    "      & \\multicolumn{2}{c}{\\textbf{Athens}}",
+    "      & \\multicolumn{2}{c}{\\textbf{Lisbon}}",
+    "      & \\multicolumn{2}{c}{\\textbf{Rome}} \\\\",
+    "    \\cline{3-8}",
+    "      &",
+    "      & $\\beta_{\\text{HWD}_t}$ & $\\beta_{\\text{CWD}_t}$",
+    "      & $\\beta_{\\text{HWD}_t}$ & $\\beta_{\\text{CWD}_t}$",
+    "      & $\\beta_{\\text{HWD}_t}$ & $\\beta_{\\text{CWD}_t}$ \\\\",
+    "    \\midrule"
+  )
+
+  for (age_index in seq_along(age_labels)) {
+    age <- age_labels[[age_index]]
+    for (model_index in seq_along(c("DLNM--LC", "DLNM--LL"))) {
+      model <- c("DLNM--LC", "DLNM--LL")[[model_index]]
+      age_cell <- ifelse(model_index == 1, age, "")
+      lines <- c(lines, paste0(
+        "    ", age_cell, " & ", model, " & ",
+        get_cell(age, model, "Athens", "HWD"), " & ",
+        get_cell(age, model, "Athens", "CWD"), " & ",
+        get_cell(age, model, "Lisbon", "HWD"), " & ",
+        get_cell(age, model, "Lisbon", "CWD"), " & ",
+        get_cell(age, model, "Rome", "HWD"), " & ",
+        get_cell(age, model, "Rome", "CWD"), " \\\\"
+      ))
+    }
+    if (age_index < length(age_labels)) lines <- c(lines, "    \\midrule")
+  }
+
+  paste(c(
+    lines,
+    "\\bottomrule",
+    "\\noalign{\\vskip 6pt}",
+    "\\end{tabular}",
+    "}",
+    "\\footnotesize{Level of significance: $0.01$:***, $0.05$:**, $0.1$:*}",
+    "\\caption{\\small Coefficients of $\\text{HWD}_t$ and $\\text{CWD}_t$ in the DLNM component of DLNM--LC and DLNM--LL models.}",
+    "\\label{hwd_cwd_coefficients_combined}",
+    "\\end{table}"
+  ), collapse = "\n")
+}
+
+DLNM_wave_coef_LC <- collect_wave_coef(LC_temp, "DLNM--LC")
+DLNM_wave_coef_LL <- collect_wave_coef(LL_temp, "DLNM--LL")
+DLNM_wave_coef_combined <- rbind(DLNM_wave_coef_LC, DLNM_wave_coef_LL)
+DLNM_wave_coef_latex <- make_wave_coef_latex(DLNM_wave_coef_combined)
+
+saveRDS(DLNM_wave_coef_LC, file.path(results_dir, "DLNM_wave_coef_LC.rds"))
+saveRDS(DLNM_wave_coef_LL, file.path(results_dir, "DLNM_wave_coef_LL.rds"))
+saveRDS(DLNM_wave_coef_combined,
+        file.path(results_dir, "DLNM_wave_coef_combined.rds"))
+writeLines(DLNM_wave_coef_latex,
+           file.path(results_dir, "DLNM_wave_coef_combined_table.tex"))
+
+cat(DLNM_wave_coef_latex)
+```
+
+## Figure 6. Climate loading theta
+```{r figure-6-climate-loading-theta, fig.width=10, fig.height=6.18, message=FALSE, warning=FALSE, results='hide'}
+theta_values <- unlist(c(theta_LC, theta_LL))
+min_val <- min(theta_values, na.rm = TRUE) -
+  0.05 * abs(min(theta_values, na.rm = TRUE))
+max_val <- max(theta_values, na.rm = TRUE) +
+  0.05 * abs(max(theta_values, na.rm = TRUE))
+step_size <- (max_val - min_val) / 4
+
+plot_theta <- function(region, age_group) {
+  df <- data.frame(
+    time = seq(as.Date("2015-01-01"), as.Date("2019-12-30"), length.out = 260),
+    DLNM_LC = as.numeric(theta_LC[[region]][[age_group]]),
+    DLNM_LL = as.numeric(theta_LL[[region]][[age_group]])
+  )
+  df_long <- pivot_longer(df, cols = c("DLNM_LC", "DLNM_LL"),
+                          names_to = "Model", values_to = "Value")
+  df_long$Model <- factor(df_long$Model, levels = c("DLNM_LC", "DLNM_LL"))
+
+  ggplot(df_long, aes(x = time, y = Value, color = Model)) +
+    geom_line(size = 0.3) +
+    scale_color_manual(
+      name = "", values = c("DLNM_LC" = "black", "DLNM_LL" = "#008F7A"),
+      labels = c("DLNM-LC", "DLNM-LL")
+    ) +
+    scale_x_date(limits = as.Date(c("2015-01-01", "2020-01-01")),
+                 date_breaks = "1 year", date_labels = "%Y", expand = c(0, 0.01)) +
+    scale_y_continuous(limits = c(min_val, max_val),
+                       breaks = seq(min_val, max_val, by = step_size),
+                       labels = number_format(accuracy = 0.01)) +
+    labs(title = paste0(age_titles[[age_group]], " (", region, ")"),
+         x = "Year", y = expression(theta)) +
+    theme_minimal() +
+    theme(
+      plot.title = element_text(hjust = 0.5, size = 7, face = "plain"),
+      panel.grid = element_blank(),
+      panel.border = element_rect(color = "black", fill = NA, size = 1),
+      legend.position = "none"
+    )
+}
+
+theta_plots <- list()
+for (region in regions) {
+  for (age_group in age_names) {
+    theta_plots[[paste(region, age_group)]] <- plot_theta(region, age_group)
+  }
+}
+
+theta_plot <- (theta_plots[["Athens Y20_64"]] | theta_plots[["Athens Y65_74"]] |
+                 theta_plots[["Athens Y75_84"]] | theta_plots[["Athens Y_GE85"]]) /
+  (theta_plots[["Lisbon Y20_64"]] | theta_plots[["Lisbon Y65_74"]] |
+     theta_plots[["Lisbon Y75_84"]] | theta_plots[["Lisbon Y_GE85"]]) /
+  (theta_plots[["Rome Y20_64"]] | theta_plots[["Rome Y65_74"]] |
+     theta_plots[["Rome Y75_84"]] | theta_plots[["Rome Y_GE85"]]) +
+  plot_layout(guides = "collect") &
+  theme(plot.title = element_text(hjust = 0.5, face = "bold", size = 14),
+        legend.position = "bottom")
+
+ggsave(file.path(figure_calibration_dir, "fraction.pdf"),
+       theta_plot, width = 10, height = 6.18)
+print(theta_plot)
+```

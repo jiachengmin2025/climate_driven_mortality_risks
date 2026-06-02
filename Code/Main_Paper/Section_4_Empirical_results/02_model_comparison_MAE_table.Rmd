@@ -1,0 +1,465 @@
+---
+title: "Model Comparison MAE Table"
+output: pdf_document
+header-includes:
+  - \usepackage{float}
+  - \usepackage{booktabs}
+  - \usepackage{graphicx}
+  - \usepackage{xcolor}
+---
+
+
+# Setup
+```{r setup, message=FALSE, warning=FALSE, results='hide'}
+packages <- c("readxl", "forecast", "dlnm", "splines", "Metrics",
+              "demography", "tseries", "mgcv", "dplyr", "gridExtra",
+              "writexl", "hwwntest", "ISOweek", "seastests", "MTS",
+              "tidyr", "grid", "nortest")
+invisible(lapply(packages, library, character.only = TRUE))
+
+find_project_root <- function(start = getwd()) {
+  path <- normalizePath(start, mustWork = FALSE)
+  for (i in seq_len(8)) {
+    if (dir.exists(file.path(path, "Code")) && dir.exists(file.path(path, "Data"))) return(path)
+    parent <- dirname(path)
+    if (identical(parent, path)) break
+    path <- parent
+  }
+  stop("Set LC_DLNM_BASE_DIR to the project root.")
+}
+base_dir <- Sys.getenv("LC_DLNM_BASE_DIR")
+if (!nzchar(base_dir)) base_dir <- find_project_root()
+data_dir <- file.path(base_dir, "Data/Combined_data")
+function_dir <- file.path(base_dir, "Code/Function")
+results_dir <- file.path(base_dir, "Results/Model-comparison")
+dir.create(results_dir, recursive = TRUE, showWarnings = FALSE)
+
+files <- list.files(function_dir, pattern = "\\.R$", full.names = TRUE)
+invisible(sapply(files, source))
+
+sets <- 10
+size <- 8
+forecast_step <- 78
+start_ind <- 102
+lag_days <- 21
+var_df <- 3
+lag_df <- 3
+spline_degree <- 3
+season_df <- 4
+max_iter_ll <- 20
+
+regions <- c("Athens", "Lisbon", "Rome")
+model_names <- c("LC", "LL", "DLNM--LC", "DLNM--LL", "Madaniyazi", "Guibert")
+age_rows <- c("20--64", "65--74", "75--84", "85+")
+age_cols <- c("Y20_64", "Y65_74", "Y75_84", "Y_GE85")
+age_groups <- c("20-64", "65-74", "75-84", "85+")
+
+region_config <- list(
+  Attiki = list(display = "Athens", death_col = 3, exposure_col = 9,
+                max_iter = 20),
+  Lisbon = list(display = "Lisbon", death_col = 4, exposure_col = 10,
+                max_iter = 20),
+  Roma = list(display = "Rome", death_col = 6, exposure_col = 12,
+              max_iter = 15)
+)
+
+Y20_64 <- read_xlsx(file.path(data_dir, "Y20_64_combined.xlsx"))
+Y65_74 <- read_xlsx(file.path(data_dir, "Y65_74_combined.xlsx"))
+Y75_84 <- read_xlsx(file.path(data_dir, "Y75_84_combined.xlsx"))
+Y_GE85 <- read_xlsx(file.path(data_dir, "Y_GE85_combined.xlsx"))
+
+region_data <- list()
+for (region in names(region_config)) {
+  cfg <- region_config[[region]]
+
+  death <- cbind(Y20_64[[cfg$death_col]],
+                 Y65_74[[cfg$death_col]],
+                 Y75_84[[cfg$death_col]],
+                 Y_GE85[[cfg$death_col]])
+  exposure <- cbind(Y20_64[[cfg$exposure_col]],
+                    Y65_74[[cfg$exposure_col]],
+                    Y75_84[[cfg$exposure_col]],
+                    Y_GE85[[cfg$exposure_col]])
+  rate <- death / exposure * 52
+  colnames(death) <- colnames(exposure) <- colnames(rate) <- age_cols
+  rownames(death) <- rownames(exposure) <- rownames(rate) <- Y20_64$Week
+
+  wave <- data.frame(
+    hot_wave = Y20_64[[paste0(region, "_hot_wave3")]],
+    cold_wave = Y20_64[[paste0(region, "_cold_wave3")]]
+  )
+  colnames(wave) <- c(paste0(region, "_hot_wave3"),
+                      paste0(region, "_cold_wave3"))
+
+  region_data[[region]] <- list(
+    display = cfg$display,
+    max_iter = cfg$max_iter,
+    death = death,
+    exposure = exposure,
+    rate = rate,
+    wave = wave,
+    utci = load_crossbasis_history(base_dir, cfg$display, region)
+  )
+}
+
+cv_folds <- lapply(0:(sets - 1), function(i) {
+  train_end <- start_ind + i * size
+  test_start <- train_end + 1
+  test_end <- train_end + forecast_step
+  if (test_end > nrow(Y20_64)) stop("Forecast window exceeds available data.")
+  list(train = 1:train_end, test = test_start:test_end)
+})
+```
+
+# Expanding-Window Cross-Validation
+
+## LC and DLNM--LC
+```{r run-dlnm-lc-model, message=FALSE, warning=FALSE, results='hide'}
+lc_rows <- list()
+dlnm_lc_rows <- list()
+
+for (region in names(region_config)) {
+  dat <- region_data[[region]]
+
+  fold_mae <- lapply(cv_folds, function(fold) {
+    utci_train <- dat$utci[fold$train, ]
+    utci_test <- dat$utci[fold$test, ]
+    varknots <- equalknots(utci_train, fun = "ns", df = var_df,
+                           degree = spline_degree)
+    lagknots <- logknots(lag_days, lag_df)
+
+    cb_train <- crossbasis(
+      utci_train, lag = lag_days,
+      argvar = list(fun = "ns", knots = varknots),
+      arglag = list(knots = lagknots, df = lag_df)
+    )
+    cb_test <- crossbasis(
+      utci_test, lag = lag_days,
+      argvar = list(fun = "ns", knots = varknots),
+      arglag = list(knots = lagknots, df = lag_df)
+    )
+
+    train_model <- DLNM_LC(dat$rate[fold$train, ],
+                           cb_train,
+                           dat$wave[fold$train, ],
+                           tol = 1e-2,
+                           max_iter = dat$max_iter,
+                           region = region)
+    fc <- DLNM_LC.forecast(
+      train_model,
+      cb_test,
+      dat$wave[fold$test, ],
+      kt_model_type = "SARIMA",
+      forecast_step = forecast_step
+    )
+
+    rbind(
+      LC = 100 * sapply(seq_along(age_cols), function(j) {
+        mae(dat$rate[fold$test, j], fc$baseline_LC.forecast[, j])
+      }),
+      `DLNM--LC` = 100 * sapply(seq_along(age_cols), function(j) {
+        mae(dat$rate[fold$test, j],
+            fc$DLNM_LC_final.forecast$model.forecast[, j])
+      })
+    )
+  })
+
+  mean_mae <- Reduce(`+`, fold_mae) / length(fold_mae)
+  colnames(mean_mae) <- age_rows
+  lc_rows[[dat$display]] <- mean_mae["LC", ]
+  dlnm_lc_rows[[dat$display]] <- mean_mae["DLNM--LC", ]
+}
+
+lc_matrix <- do.call(rbind, lc_rows)[regions, age_rows, drop = FALSE]
+dlnm_lc_matrix <- do.call(rbind, dlnm_lc_rows)[regions, age_rows, drop = FALSE]
+storage.mode(lc_matrix) <- "numeric"
+storage.mode(dlnm_lc_matrix) <- "numeric"
+
+lc_result <- list(
+  LC = lc_matrix,
+  `DLNM--LC` = dlnm_lc_matrix
+)
+```
+
+## LL and DLNM--LL
+```{r run-dlnm-ll-model, message=FALSE, warning=FALSE, results='hide'}
+rate_list <- lapply(region_data, `[[`, "rate")
+wave_list <- lapply(region_data, `[[`, "wave")
+utci_list <- lapply(region_data, `[[`, "utci")
+
+folds <- lapply(0:(sets - 1), function(i) {
+  train_size <- start_ind + i * size
+  test_size <- train_size + forecast_step
+  create_train_test_sets(rate_list, wave_list, utci_list,
+                         train_size = train_size,
+                         test_size = test_size,
+                         lag = lag_days,
+                         var.df = var_df,
+                         lag.df = lag_df,
+                         degree = spline_degree)
+})
+
+fold_mae <- lapply(folds, function(fold) {
+  train_model <- DLNM_LL(dat_list = fold$train_set$dat_list,
+                         cb_list = fold$train_set$cb_list,
+                         wave_list = fold$train_set$wave_list,
+                         tol = 1e-2,
+                         max_iter = max_iter_ll)
+  fc <- DLNM_LL.forecast(
+    train_model,
+    cb_matrix_test = fold$test_set$cb_list,
+    wave_data_test = fold$test_set$wave_list,
+    forecast_step = nrow(fold$test_set$dat_list[[1]])
+  )
+
+  baseline_ll <- lapply(fc$baseline_LL.forecast, function(region) {
+    as.data.frame(lapply(region, exp))
+  })
+  dlnm_ll <- lapply(fc$DLNM_LL_final.forecast$model.forecast, function(region) {
+    as.data.frame(lapply(region, exp))
+  })
+
+  lapply(names(fold$test_set$dat_list), function(region) {
+    test_rate <- fold$test_set$dat_list[[region]]
+    rbind(
+      LL = 100 * sapply(seq_along(age_cols), function(j) {
+        mae(test_rate[, j], baseline_ll[[region]][, j])
+      }),
+      `DLNM--LL` = 100 * sapply(seq_along(age_cols), function(j) {
+        mae(test_rate[, j], dlnm_ll[[region]][, j])
+      })
+    )
+  }) |>
+    setNames(names(fold$test_set$dat_list))
+})
+
+ll_rows <- list()
+dlnm_ll_rows <- list()
+for (region in names(region_config)) {
+  mean_mae <- Reduce(`+`, lapply(fold_mae, function(x) x[[region]])) /
+    length(fold_mae)
+  colnames(mean_mae) <- age_rows
+  display <- region_config[[region]]$display
+  ll_rows[[display]] <- mean_mae["LL", ]
+  dlnm_ll_rows[[display]] <- mean_mae["DLNM--LL", ]
+}
+
+ll_matrix <- do.call(rbind, ll_rows)[regions, age_rows, drop = FALSE]
+dlnm_ll_matrix <- do.call(rbind, dlnm_ll_rows)[regions, age_rows, drop = FALSE]
+storage.mode(ll_matrix) <- "numeric"
+storage.mode(dlnm_ll_matrix) <- "numeric"
+
+ll_result <- list(
+  LL = ll_matrix,
+  `DLNM--LL` = dlnm_ll_matrix
+)
+```
+
+## Madaniyazi Model
+```{r run-madaniyazi-model, message=FALSE, warning=FALSE, results='hide'}
+week_all <- Y20_64$Week
+weekly_trend <- seq_along(week_all) / 52
+week_of_year <- as.integer(sub(".*-W", "", week_all))
+season <- mgcv::smoothCon(
+  mgcv::s(week_of_year, bs = "cc", k = season_df + 2, fx = TRUE),
+  data = data.frame(week_of_year = week_of_year),
+  absorb.cons = TRUE
+)[[1]]$X
+
+madaniyazi_rows <- list()
+for (region in names(region_config)) {
+  dat <- region_data[[region]]
+
+  madaniyazi_rows[[dat$display]] <- 100 * sapply(seq_along(age_cols), function(j) {
+    fold_mae <- sapply(cv_folds, function(fold) {
+      utci_train <- dat$utci[fold$train, ]
+      utci_test <- dat$utci[fold$test, ]
+      varknots <- equalknots(utci_train, fun = "ns", df = var_df,
+                             degree = spline_degree)
+      lagknots <- logknots(lag_days, fun = "ns", df = lag_df)
+
+      cb_train <- crossbasis(
+        utci_train, lag = lag_days,
+        argvar = list(fun = "ns", knots = varknots),
+        arglag = list(fun = "ns", knots = lagknots, df = lag_df)
+      )
+      cb_test <- crossbasis(
+        utci_test, lag = lag_days,
+        argvar = list(fun = "ns", knots = varknots),
+        arglag = list(fun = "ns", knots = lagknots, df = lag_df)
+      )
+
+      fit <- Madaniyazi.fit(
+        death = as.numeric(dat$death[fold$train, j]),
+        exposure = as.numeric(dat$exposure[fold$train, j]),
+        utci_crossbasis = cb_train,
+        weekly_trend = weekly_trend[fold$train],
+        week_of_year_basis = season[fold$train, , drop = FALSE]
+      )
+      pred_rate <- Madaniyazi.forecast(
+        fit,
+        exposure = as.numeric(dat$exposure[fold$test, j]),
+        utci_crossbasis = cb_test,
+        weekly_trend = weekly_trend[fold$test],
+        week_of_year_basis = season[fold$test, , drop = FALSE]
+      )
+      mae(dat$rate[fold$test, j], pred_rate)
+    })
+    mean(fold_mae, na.rm = TRUE)
+  })
+}
+
+madaniyazi_result <- do.call(rbind, madaniyazi_rows)
+colnames(madaniyazi_result) <- age_rows
+madaniyazi_result <- madaniyazi_result[regions, age_rows, drop = FALSE]
+storage.mode(madaniyazi_result) <- "numeric"
+```
+
+## Guibert Model
+```{r run-guibert-model, message=FALSE, warning=FALSE, results='hide'}
+rate_list <- lapply(region_data, function(dat) {
+  data.frame(time = seq_len(nrow(Y20_64)), dat$rate)
+})
+utci_list <- lapply(region_data, `[[`, "utci")
+
+folds <- lapply(0:(sets - 1), function(i) {
+  train_size <- start_ind + i * size
+  test_size <- train_size + forecast_step
+  Guibert.create_train_test_sets(rate_list, utci_list,
+                                 train_size = train_size,
+                                 test_size = test_size,
+                                 lag = lag_days,
+                                 var.df = var_df,
+                                 lag.df = lag_df,
+                                 degree = spline_degree)
+})
+
+fold_mae <- lapply(folds, function(fold) {
+  fit <- Guibert.fit(regions_data = fold$train_set$dat_list,
+                     cb_list = fold$train_set$cb_list,
+                     ns_df = 8)
+  fc <- Guibert.forecast(
+    LL_fit = fit$LL_fit,
+    dlnm_estimates_list = fit$dlnm_estimates_list,
+    cb_matrix_test = fold$test_set$cb_list,
+    forecast_step = nrow(fold$test_set$dat_list[[1]])
+  )
+
+  lapply(names(fc$Guibert.forecast.list), function(region) {
+    forecast_rate <- as.data.frame(fc$Guibert.forecast.list[[region]])
+    test_rate <- as.data.frame(fold$test_set$dat_list[[region]])
+    100 * sapply(age_cols, function(age) {
+      mae(test_rate[[age]], forecast_rate[[age]])
+    })
+  }) |>
+    setNames(names(fc$Guibert.forecast.list))
+})
+
+guibert_rows <- list()
+for (region in names(region_config)) {
+  display <- region_config[[region]]$display
+  guibert_rows[[display]] <- rowMeans(do.call(cbind, lapply(fold_mae, function(x) {
+    x[[region]][age_cols]
+  })), na.rm = TRUE)
+}
+
+guibert_result <- do.call(rbind, guibert_rows)
+colnames(guibert_result) <- age_rows
+guibert_result <- guibert_result[regions, age_rows, drop = FALSE]
+storage.mode(guibert_result) <- "numeric"
+```
+
+## Forecast MAE Summary
+
+```{r build-table, message=FALSE, warning=FALSE, results='hide'}
+model_mae <- list(
+  LC = lc_result$LC,
+  LL = ll_result$LL,
+  `DLNM--LC` = lc_result$`DLNM--LC`,
+  `DLNM--LL` = ll_result$`DLNM--LL`,
+  Madaniyazi = madaniyazi_result,
+  Guibert = guibert_result
+)
+
+model_mae <- model_mae[model_names]
+
+comparison_long <- do.call(rbind, lapply(regions, function(region) {
+  do.call(rbind, lapply(age_rows, function(age_group) {
+    data.frame(
+      Region = region,
+      Age_group = age_group,
+      t(vapply(model_names, function(model) {
+        model_mae[[model]][region, age_group]
+      }, numeric(1))),
+      check.names = FALSE,
+      row.names = NULL
+    )
+  }))
+}))
+
+write.csv(comparison_long,
+          file.path(results_dir, "Model-comparison-MAE-table.csv"),
+          row.names = FALSE)
+```
+
+```{r make-latex, results='asis', message=FALSE, warning=FALSE}
+latex_table <- c(
+  "\\begin{table}[H]",
+  "    \\centering",
+  "    \\color{black}",
+  "    \\resizebox{\\textwidth}{!}{",
+  "    \\begin{tabular}{ccccccc}"
+)
+
+for (region in regions) {
+  latex_table <- c(
+    latex_table,
+    if (region == regions[1]) "        \\toprule" else "        \\midrule",
+    sprintf("        \\small\\textbf{%s} ", region),
+    "          & \\small\\textbf{LC} ",
+    "          & \\small\\textbf{LL} ",
+    "          & \\small\\textbf{DLNM--LC} ",
+    "          & \\small\\textbf{DLNM--LL} ",
+    "          & \\small\\textbf{Madaniyazi et al.}",
+    "          & \\small\\textbf{Guibert et al.} \\\\",
+    "        \\midrule"
+  )
+
+  for (age_group in age_rows) {
+    values <- round(vapply(model_names, function(model) {
+      model_mae[[model]][region, age_group]
+    }, numeric(1)), 4)
+    distinct_values <- sort(unique(values[is.finite(values)]))
+    best_value <- distinct_values[1]
+    second_value <- if (length(distinct_values) > 1) distinct_values[2] else NA_real_
+
+    cells <- sprintf("%.4f", values)
+    cells[values == best_value] <- paste0("\\textbf{",
+                                          cells[values == best_value],
+                                          "}")
+    if (is.finite(second_value)) {
+      cells[values == second_value] <- paste0("\\textit{",
+                                              cells[values == second_value],
+                                              "}")
+    }
+
+    latex_table <- c(
+      latex_table,
+      sprintf("        %s & %s \\\\", age_group, paste(cells, collapse = " & "))
+    )
+  }
+}
+
+latex_table <- c(
+  latex_table,
+  "        \\bottomrule",
+  "    \\end{tabular}}",
+  "    \\caption{MAE ($\\times 100$) for 10--fold expanding window cross-validation.}",
+  "    \\label{tab:compare_mae}",
+  "\\end{table}"
+)
+
+writeLines(latex_table,
+           file.path(results_dir, "Model-comparison-MAE-table.tex"))
+cat(paste(latex_table, collapse = "\n"))
+```
