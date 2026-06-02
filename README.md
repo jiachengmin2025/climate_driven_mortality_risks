@@ -19,18 +19,18 @@ Rscript requirements.R
 ## Overview
 - `LC_DLNM.Rproj` initializes the project.
 - `Code` folder contains all the code to reproduce the results.
-  - The `Function` subfolder within `Code` contains the core model functions.
+- `Function` subfolder within `Code` contains the core model functions.
 - `Data` folder contains the raw death count data, population data, historical UTCI data, and scenario-based UTCI data (RCP2.6 and RCP8.5).
 - 
-## Data
-- In **Section 3**, we visualize the weekly historical mortality rates (2015-2019) in **Figure 1**, and UTCI data in **Figure 2**.
-- Use the following code to generate **Figure 1** and **Figure 2**.
+## Section 3: Data
+- We visualize the weekly historical mortality rates (2015-2019) in **Figure 1**, and UTCI data in **Figure 2**.
+- Use the following code to reproduce **Figure 1** and **Figure 2**.
 ```shell
 Rscript -e "rmarkdown::render('Code/Main_paper/Section_3_Data/01_Historical_data_aggregation.Rmd')"
 ``` 
 
-## Empirical results
-- In **Section 4**, we calibrate stochastic mortality component (**Section 4.1**) by visualizing the fitted time-varying factors for LC, LL, DLNM--LC, and DLNM--LL models in Figure 3 and Figure 4. Then we calibrate DLNM climate-driven mortality component (**Section 4.2**) in DLNM--LC and DLNM--LC model by visualizing overall cumulative effects of UTCI (**Section 4.3**) in Figure 5 and present coefficients of $\text{HWD}_t$ and $\text{CWD}_t$ in Table 1. 
+## Section 4: Empirical results
+- We calibrate stochastic mortality component (**Section 4.1**) by visualizing the fitted time-varying factors for LC, LL, DLNM--LC, and DLNM--LL models in **Figure 3** and **Figure 4**. Then we calibrate DLNM climate-driven mortality component (**Section 4.2**) in DLNM--LC and DLNM--LC model by visualizing overall cumulative effects of UTCI (**Section 4.3**) in Figure 5 and present coefficients of $\text{HWD}_t$ and $\text{CWD}_t$ in Table 1. 
 - Use the following code to reproduce **Figure 3, 4**, and **5**, and **Table 1**.
 ```shell
 Rscript -e "rmarkdown::render('Code/Main_paper/Section_4_Empirical_results/01_DLNM_LC_LL_calibration.Rmd')"
@@ -40,9 +40,18 @@ Rscript -e "rmarkdown::render('Code/Main_paper/Section_4_Empirical_results/01_DL
 ```shell
 Rscript -e "rmarkdown::render('Code/Main_paper/Section_4_Empirical_results/02_model_comparison_MAE_table.Rmd')"
 ```
-## Mortality projections under RCP scenarios
 
-
+## Section 5: Mortality projections under RCP scenarios
+- We present the results of weekly mortality projections (**Section 5.3**) under RCP2.6 and RCP8.5 in **Figure 7, 8**, and **9**. And then we illustrate the results of annual mortality projections (**Section 5.4**) for Athens in **Figure 10**.
+- Use the following code to run the weekly mortality projections for DLNM--LC and DLNM--LL model, respectively.    
+```shell
+Rscript -e "rmarkdown::render('Code/Main_paper/Section_4_Empirical_results/01_DLNM_LC_RCP_simulation.Rmd')"
+Rscript -e "rmarkdown::render('Code/Main_paper/Section_4_Empirical_results/02_DLNM_LL_RCP_simulation.Rmd')"
+```
+- Use the following code toreproduce **Figure 7, 8**, and **9,**.
+```shell
+Rscript -e "rmarkdown::render('Code/Main_paper/Section_4_Empirical_results/03_RCP_weekly_visualization.Rmd')"
+```
 ## Supplementary Material
 - Section C...
 - Section D...
