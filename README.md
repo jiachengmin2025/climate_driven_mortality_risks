@@ -31,60 +31,9 @@ Rscript -e
 
 ## Empirical results
 
-- Use the following code to run DLNM--LC and DLNM--LL model. In the expanding window cross-validation, the mean absolute error (MAE) for LC, LL, DLNM--LC, and DLNM--LL can be computed.
 
-```shell
-Rscript Code/Model/DLNM-LC-Attica.R
-Rscript Code/Model/DLNM-LC-Lisbon.R
-Rscript Code/Model/DLNM-LC-Rome.R
-Rscript Code/Model/DLNM-LL.R
-```
-- Use the following code to calibrate DLNM--LC and DLNM--LL model. The plot of overall cumulative effects, lagged effects, and time-varying factors are generated.
-
-```shell
-Rscript Code/Calibration/DLNM-LC-Calibration.R
-Rscript Code/Calibration/DLNM-LL-Calibration.R
-Rscript Code/Calibration/time-varying-factors.R
-```
-
-- Use the following code to run **time spline DLNM**. In the expanding window cross-validation, the MAE can be computed.
-
-```shell
-Rscript Code/Model-comparison/time-spline-DLNM-Attiki.R
-Rscript Code/Model-comparison/time-spline-DLNM-Lisbon.R
-Rscript Code/Model-comparison/time-spline-DLNM-Roma.R
-```
 ## Mortality projections under RCP scenarios
-- Use the following code to process future generated UTCI data under RCP2.6 and RCP8.5.
 
-```shell
-Rscript Code/RCP_simulation_study/data_processing_rcp26_rcp85.R
-```
-
-- Use the following code to simulate weekly mortality rates from 2031 to 2045 under RCP2.6 and RCP8.5 for DLNM--LC model, and visualize the results.
-
-```shell
-Rscript Code/RCP_simulation_study/DLNM_LC_sim_rcp26.R
-Rscript Code/RCP_simulation_study/DLNM_LC_sim_rcp85.R
-Rscript Code/RCP_simulation_study/DLNM_LC_RCP_sim_comparison.R
-```
-
-- Use the following code to simulate weekly mortality rates from 2031 to 2045 under RCP2.6 and RCP8.5 for DLNM--LL model, and visualize the results.
-
-```shell
-Rscript Code/RCP_simulation_study/DLNM_LL_sim_rcp26.R
-Rscript Code/RCP_simulation_study/DLNM_LL_sim_rcp85.R
-Rscript Code/RCP_simulation_study/DLNM_LL_RCP_sim_comparison.R
-```
-- The simulation results are saved as `.RData` file in `Results`. If your computer cannot save the simulation outputs due to limited memory or computational resources, please download the `Results` folder on <a href="https://drive.google.com/drive/folders/1MTxlj_AZO0nfjLoOq5icurK3x4g1YJEW?usp=sharing">Google Drive</a> to continue reproducing the simulations.
-
-- Use the following code to aggregate annualized mortality data, simulate annualized mortality rates from 2031 to 2045 under RCP2.6 and RCP8.5, and visualize the results.
-
-```shell
-Rscript Code/RCP_simulation_study/Annualization_data_processing.R
-Rscript Code/RCP_simulation_study/Annualized_DLNM_LC_plotting.R
-Rscript Code/RCP_simulation_study/Annualized_DLNM_LL_plotting.R
-```
 
 ## Supplementary Material
 - Section C...
