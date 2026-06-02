@@ -30,7 +30,7 @@ Rscript -e "rmarkdown::render('Code/Main_paper/Section_3_Data/01_Historical_data
 ``` 
 
 ## Section 4: Empirical results
-- We calibrate stochastic mortality component (**Section 4.1**) by visualizing the fitted time-varying factors for LC, LL, DLNM--LC, and DLNM--LL models in **Figure 3** and **Figure 4**. Then we calibrate DLNM climate-driven mortality component (**Section 4.2**) in DLNM--LC and DLNM--LC model by visualizing overall cumulative effects of UTCI (**Section 4.3**) in Figure 5 and present coefficients of $\text{HWD}_t$ and $\text{CWD}_t$ in Table 1. 
+- We calibrate stochastic mortality component (**Section 4.1**) by visualizing the fitted time-varying factors for LC, LL, DLNM--LC, and DLNM--LL models in **Figure 3** and **Figure 4**. Then we calibrate DLNM climate-driven mortality component (**Section 4.2**) in DLNM--LC and DLNM--LC model by visualizing overall cumulative effects of UTCI (**Section 4.3**) in Figure 5 and present the coefficients of $\text{HWD}_t$ and $\text{CWD}_t$ in Table 1. 
 - Use the following code to reproduce **Figure 3, 4**, and **5**, and **Table 1**.
 ```shell
 Rscript -e "rmarkdown::render('Code/Main_paper/Section_4_Empirical_results/01_DLNM_LC_LL_calibration.Rmd')"
