@@ -22,10 +22,10 @@ Rscript requirements.R
   - The `Function` subfolder within `Code` contains the core model functions.
 - `Data` folder contains the raw death count data, population data, historical UTCI data, and scenario-based UTCI data (RCP2.6 and RCP8.5).
 
-## Section 3: Data
+## Data
 - 
 
-## Section 4: Empirical results
+## Empirical results
 - Use the following code to visualize mortality rates and UTCI across regions and age groups.
 
 ```shell
