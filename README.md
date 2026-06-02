@@ -35,7 +35,7 @@ Rscript -e "rmarkdown::render('Code/Main_paper/Section_3_Data/01_Historical_data
 ```shell
 Rscript -e "rmarkdown::render('Code/Main_paper/Section_4_Empirical_results/01_DLNM_LC_LL_calibration.Rmd')"
 ```
-- We perform the expanding-window cross-validation in **Section 4.4** for 6 models: **LC, LL, DLNM--LC, DLNM--LL, Madaniyazi et al., Guibert et al.**. The mean absolute error (MAE) under $\times 100$ scale is reported in **Table 2**.
+- We perform the expanding-window cross-validation in **Section 4.4** for 6 models: **LC, LL, DLNM--LC, DLNM--LL, Madaniyazi et al., Guibert et al.**. The forecast mean absolute error (MAE) under $\times 100$ scale is reported in **Table 2**.
 - Use the following code to reproduce **Table 2**.
 ```shell
 Rscript -e "rmarkdown::render('Code/Main_paper/Section_4_Empirical_results/02_model_comparison_MAE_table.Rmd')"
@@ -45,27 +45,38 @@ Rscript -e "rmarkdown::render('Code/Main_paper/Section_4_Empirical_results/02_mo
 - We present the results of weekly mortality projections (**Section 5.3**) under RCP2.6 and RCP8.5 in **Figure 7, 8**, and **9**. And then 
 - Use the following code to run the weekly mortality projections for DLNM--LC and DLNM--LL model, respectively.    
 ```shell
-Rscript -e "rmarkdown::render('Code/Main_paper/Section_4_Empirical_results/01_DLNM_LC_RCP_simulation.Rmd')"
-Rscript -e "rmarkdown::render('Code/Main_paper/Section_4_Empirical_results/02_DLNM_LL_RCP_simulation.Rmd')"
+Rscript -e "rmarkdown::render('Code/Main_paper/Section_5_Mortality_projection/01_DLNM_LC_RCP_simulation.Rmd')"
+Rscript -e "rmarkdown::render('Code/Main_paper/Section_5_Mortality_projection/02_DLNM_LL_RCP_simulation.Rmd')"
 ```
-- Use the following code toreproduce **Figure 7, 8**, and **9**.
+- Use the following code to reproduce **Figure 7, 8**, and **9**.
 ```shell
-Rscript -e "rmarkdown::render('Code/Main_paper/Section_4_Empirical_results/03_RCP_weekly_visualization.Rmd')"
+Rscript -e "rmarkdown::render('Code/Main_paper/Section_5_Mortality_projection/03_RCP_weekly_visualization.Rmd')"
 ```
-- We illustrate the results of annual mortality projections (**Section 5.4**) for Athens in **Figure 10**.
+- We illustrate the results of annual mortality projections (**Section 5.4**) in **Figure 10** of the paper, and **Figure F.1** and **F.2** in the Supplementary Material.
 - Use the following code to run the annual mortality projections for DLNM--LC and DLNM--LL model, respectively.
 ```shell
-Rscript -e "rmarkdown::render('Code/Main_paper/Section_4_Empirical_results/04_RCP_annualization.Rmd')"
+Rscript -e "rmarkdown::render('Code/Main_paper/Section_5_Mortality_projection/04_RCP_annualization.Rmd')"
 ```
-- Use the following code toreproduce **Figure 10**.
+- Use the following code to reproduce **Figure 10**, **Figure F.1** and **F.2**.
 ```shell
-Rscript -e "rmarkdown::render('Code/Main_paper/Section_4_Empirical_results/05_RCP_annualized_visualization.Rmd')"
+Rscript -e "rmarkdown::render('Code/Main_paper/Section_5_Mortality_projection/05_RCP_annualized_visualization.Rmd')"
 ```
 ## Supplementary Material
-- Section C...
-- Section D...
-- Section E...
-- Section F, the code .... is  .... from ...
+- In **Section C**, we present the lagged effects via DLNM across all regions for DLNM--LC and DLNM--LL models in **Figure C.1, C.2, C.3, C.4, C.5** and **C.6**.
+- Use the following code to reproduce **Figure C.1, C.2, C.3, C.4, C.5** and **C.6**.
+```shell
+Rscript -e "rmarkdown::render('Code/Supplementary/Section_C_Figures_of_specific_lagged_effects_via_DLNM.Rmd')"
+```
+- In Section D, we present the optimal time series model for time-varying factors (**Section D.1**) and seasonality test on model residuals (**Section D.2**).
+- Use the following code to reproduce **Table D.1, D.2, D.3** and **D.4**.
+```shell
+Rscript -e "rmarkdown::render('Code/Supplementary/Section_D_Model_specifications_and_diagnostics.Rmd')"
+```
+- In **Section E**, we report the forecast performance under alternative heat and cold wave definitions, reporting forecast MAE from expanding-window cross-validation in **Table E.5** and **E.6**.
+- Use the following code to reproduce **Table E.5, E.6**.
+```shell
+Rscript -e "rmarkdown::render('Code/Supplementary/Section_E_Alternative_heat_and_cold_wave_definitions.Rmd')"
+```
 
 ## References
 Min, J., Li, H., Nagler, T., & Li, S. (2025). *Assessing Climate-Driven Mortality Risk: A Stochastic Approach with Distributed Lag Non-Linear Models*. arXiv preprint https://arxiv.org/abs/2506.00561.
