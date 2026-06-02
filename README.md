@@ -23,22 +23,13 @@ Rscript requirements.R
 - `Data` folder contains the raw death count data, population data, historical UTCI data, and scenario-based UTCI data (RCP2.6 and RCP8.5).
 
 ## Data
-- 
-
-## Empirical results
 - Use the following code to visualize mortality rates and UTCI across regions and age groups.
 
 ```shell
 Rscript Code/Historical_data_aggregation/Historical_data.R
 ```
 
-- Use the following code to generate **mixed-frequency cross-basis matrices** across regions.
-
-```shell
-Rscript Code/Crossbasis_matrix/cb_Attiki.R
-Rscript Code/Crossbasis_matrix/cb_Lisbon.R
-Rscript Code/Crossbasis_matrix/cb_Roma.R
-```
+## Empirical results
 
 - Use the following code to run DLNM--LC and DLNM--LL model. In the expanding window cross-validation, the mean absolute error (MAE) for LC, LL, DLNM--LC, and DLNM--LL can be computed.
 
