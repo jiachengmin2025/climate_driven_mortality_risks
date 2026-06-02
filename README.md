@@ -21,10 +21,11 @@ Rscript requirements.R
 - `Code` folder contains all the code to reproduce the results.
   - The `Function` subfolder within `Code` contains the core model functions.
 - `Data` folder contains the raw death count data, population data, historical UTCI data, and scenario-based UTCI data (RCP2.6 and RCP8.5).
-- `Figures` folder includes all the produced figures.
-- `Results` folder is not shown on Github due to the large size. The folder is available on <a href="https://drive.google.com/drive/folders/1MTxlj_AZO0nfjLoOq5icurK3x4g1YJEW?usp=sharing">Google Drive</a>. The folder contains necessary `.RData` files for mortality projections under RCP scenarios. These `.RData` files can also be reproduced via R scripts in `Code/RCP_simulation_study`.
 
-## Empirical results
+## Section 3: Data
+- 
+
+## Section 4: Empirical results
 - Use the following code to visualize mortality rates and UTCI across regions and age groups.
 
 ```shell
