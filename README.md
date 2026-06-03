@@ -47,7 +47,7 @@ Rscript -e "render('Code/Main_paper/Section_4_Empirical_results/02_model_compari
 ### Section 5: Mortality projections under RCP scenarios
 - The code for **Section 5** of the manuscript can be found `Code/Main_paper/Section_5_Mortality_projection`
 - We first process the future UTCI data under RCP2.6 and RCP8.5.
-- Use the following code to process the future UTCI data.
+- Use the following code to initialize and process the future UTCI data.
 ```shell
 Rscript -e "render('Code/Main_paper/Section_5_Mortality_projection/00_RCP_future_input_processing.Rmd')"
 ```
@@ -57,7 +57,7 @@ Rscript -e "render('Code/Main_paper/Section_5_Mortality_projection/00_RCP_future
 Rscript -e "render('Code/Main_paper/Section_5_Mortality_projection/01_DLNM_LC_RCP_simulation.Rmd')"
 Rscript -e "render('Code/Main_paper/Section_5_Mortality_projection/02_DLNM_LL_RCP_simulation.Rmd')"
 ```
-- Use the following code to reproduce **Figure 7, 8**, and **9**.
+- Use the following code to reproduce **Figure 7, 8**, and **9** of the manuscript.
 ```shell
 Rscript -e "render('Code/Main_paper/Section_5_Mortality_projection/03_RCP_weekly_visualization.Rmd')"
 ```
