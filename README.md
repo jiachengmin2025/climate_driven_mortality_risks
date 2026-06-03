@@ -22,9 +22,9 @@ Rscript package_requirements.R
 - `Data` folder contains the death count data, population data, historical UTCI data, and scenario-based UTCI data (RCP2.6 and RCP8.5).
 
 ## Manuscript
-The code related to  **Section 3, 4,** and **5** of the manuscript can be found in `Code/Main_paper/*`.
+The code related to  **Section 3, 4,** and **5** of the manuscript can be found in `Code/Main_paper`.
 ### Section 3: Data
-- The code for **Section 3** of the manuscript can be found `Code/Main_paper/Section_3_Data/*`.
+- The code for **Section 3** of the manuscript can be found `Code/Main_paper/Section_3_Data`.
 - We visualize the weekly historical mortality rates (2015-2019) in **Figure 1**, and UTCI data in **Figure 2**.
 - Use the following code to reproduce **Figure 1** and **Figure 2** of the manuscript.
 ```shell
@@ -32,7 +32,7 @@ Rscript -e "render('Code/Main_paper/Section_3_Data/01_Historical_data_aggregatio
 ``` 
 
 ### Section 4: Empirical results
-- The code for **Section 4** of the manuscript can be found `Code/Main_paper/Section_4_Empirical_results/*`.
+- The code for **Section 4** of the manuscript can be found `Code/Main_paper/Section_4_Empirical_results`.
 - We calibrate stochastic mortality component (**Section 4.1**) by visualizing the fitted time-varying factors for LC, LL, DLNM--LC, and DLNM--LL models in **Figure 3** and **Figure 4**. Then we calibrate DLNM climate-driven mortality component (**Section 4.2**) in DLNM--LC and DLNM--LC model by visualizing overall cumulative effects of UTCI (**Section 4.3**) in **Figure 5** and present the coefficients of $\text{HWD}_t$ and $\text{CWD}_t$ in **Table 1**. 
 - Use the following code to reproduce **Figure 3, 4**, and **5**, and **Table 1** of the manuscript.
 ```shell
@@ -45,7 +45,7 @@ Rscript -e "render('Code/Main_paper/Section_4_Empirical_results/02_model_compari
 ```
 
 ### Section 5: Mortality projections under RCP scenarios
-- The code for **Section 5** of the manuscript can be found `Code/Main_paper/Section_5_Mortality_projection/*`
+- The code for **Section 5** of the manuscript can be found `Code/Main_paper/Section_5_Mortality_projection`
 - We first process the future UTCI data under RCP2.6 and RCP8.5.
 - Use the following code to process the future UTCI data.
 ```shell
@@ -61,32 +61,32 @@ Rscript -e "render('Code/Main_paper/Section_5_Mortality_projection/02_DLNM_LL_RC
 ```shell
 Rscript -e "render('Code/Main_paper/Section_5_Mortality_projection/03_RCP_weekly_visualization.Rmd')"
 ```
-- We illustrate the results of annual mortality projections (**Section 5.4**) in **Figure 10** of the paper, and **Figure F.1** and **F.2** in the Supplementary Material.
+- We illustrate the results of annual mortality projections (**Section 5.4**) in **Figure 10** of the manuscript, and **Figure F.1** and **F.2** in the Supplementary Material.
 - Use the following code to run the annual mortality projections for DLNM--LC and DLNM--LL model, respectively.
 ```shell
 Rscript -e "render('Code/Main_paper/Section_5_Mortality_projection/04_RCP_annualization.Rmd')"
 ```
-- Use the following code to reproduce **Figure 10**, **Figure F.1** and **F.2**.
+- Use the following code to reproduce **Figure 10**, **Figure F.1** of the manuscript, and **F.2** of Supplementary Material.
 ```shell
 Rscript -e "render('Code/Main_paper/Section_5_Mortality_projection/05_RCP_annualized_visualization.Rmd')"
 ```
 ## Supplementary Material
-- The code related to **Section C, D** and **E** of Supplementary Material can be found in `Code/Supplementary/*`.
+- The code related to **Section C, D** and **E** of Supplementary Material can be found in `Code/Supplementary`.
 ### **Section C**
 - We present the lagged effects via DLNM across all regions for DLNM--LC and DLNM--LL models in **Figure C.1, C.2, C.3, C.4, C.5** and **C.6**.
-- Use the following code to reproduce **Figure C.1, C.2, C.3, C.4, C.5** and **C.6**.
+- Use the following code to reproduce **Figure C.1, C.2, C.3, C.4, C.5** and **C.6** of Supplementary Material.
 ```shell
 Rscript -e "render('Code/Supplementary/Section_C_Figures_of_specific_lagged_effects_via_DLNM.Rmd')"
 ```
 ### **Section D**
 - We present the optimal time series model for time-varying factors (**Section D.1**) and seasonality test on model residuals (**Section D.2**).
-- Use the following code to reproduce **Table D.1, D.2, D.3** and **D.4**.
+- Use the following code to reproduce **Table D.1, D.2, D.3** and **D.4** of Supplementary Material.
 ```shell
 Rscript -e "render('Code/Supplementary/Section_D_Model_specifications_and_diagnostics.Rmd')"
 ```
 ### **Section E**
 - We report the forecast performance under alternative heat and cold wave definitions, reporting forecast MAE from expanding-window cross-validation in **Table E.5** and **E.6**.
-- Use the following code to reproduce **Table E.5, E.6**.
+- Use the following code to reproduce **Table E.5, E.6** of Supplementary Material.
 ```shell
 Rscript -e "render('Code/Supplementary/Section_E_Alternative_heat_and_cold_wave_definitions.Rmd')"
 ```
