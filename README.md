@@ -13,11 +13,11 @@ The following packages are required to finish the experiments.
 
 All packages are available on CRAN. To check whether all packages are installed or find out which are missing run:
 ```shell
-Rscript requirements.R
+Rscript package_requirements.R
 ```
 
 ## Overview
-- `LC_DLNM.Rproj` initializes the project.
+- `environment.Rproj` initializes the project.
 - `Code` folder contains all the code to reproduce the results.
 - `Function` subfolder within `Code` contains the core model functions.
 - `Data` folder contains the raw death count data, population data, historical UTCI data, and scenario-based UTCI data (RCP2.6 and RCP8.5).
