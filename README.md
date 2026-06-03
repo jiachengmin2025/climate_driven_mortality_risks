@@ -24,12 +24,12 @@ Rscript package_requirements.R
 ## Function
 `Code/Function/` contains  functions used by the R Markdown files.
 
-- `LC_model.R` and `LL_model.R` fit the baseline Lee--Carter and Li--Lee mortality models.
-- `DLNM_LC.R`, `DLNM_LC.forecast.R`, `DLNM_LL.R`, and `DLNM_LL.forecast.R` fit and forecast the proposed DLNM--LC and DLNM--LL models.
+- `LC_model.R` and `LL_model.R` fit the Lee--Carter and Li--Lee models.
+- `DLNM_LC.R`, `DLNM_LC.forecast.R`, `DLNM_LL.R`, and `DLNM_LL.forecast.R` fit and forecast DLNM--LC and DLNM--LL models.
 - `dlnm_proc.R` fits the age-specific Gaussian DLNM component on log mortality rates.
 - `create_train_test_sets.R` constructs expanding-window training and testing sets.
 - `crossbasis_mixed_frequency.R` builds historical weekly cross-basis matrices from daily UTCI data.
-- `Madaniyazi.fit.R`, `Madaniyazi.forecast.R`, `Guirbert.fit.R`, `Guibert.forecast.R`, and `Guibert.create_train_test_sets.R` implement the comparator models.
+- `Madaniyazi.fit.R`, `Madaniyazi.forecast.R`, `Guibert.fit.R`, `Guibert.forecast.R`, and `Guibert.create_train_test_sets.R` implement the Madaniyazi et al. and Guibert et al. models.
 - `kt_model.R`, `kappa_fit.R`, and `sarima_table_helpers.R` fit and summarize time-series models for the time-varying mortality factors.
 - `DLNM_residual_diagnostics.R` runs the residual seasonality diagnostics in Supplementary Section D.
 - `rcp_inputs.R`, `rcp_dlnm_simulation.R`, `rcp_annualization.R`, `rcp_visualization.R`, `rcp_legacy_sarima.R`, and `rcp_region_names.R` support the RCP mortality projection and visualization workflow.
