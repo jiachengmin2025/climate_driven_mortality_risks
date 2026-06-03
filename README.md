@@ -24,7 +24,7 @@ Rscript package_requirements.R
 ```
 
 ## Function
-`Code/Function/` contains  functions used by the R Markdown files.
+`Code/Function/` contains main functions used in the project.
 
 - `LC_model.R` and `LL_model.R` fit the Lee--Carter and Li--Lee models.
 - `DLNM_LC.R`, `DLNM_LC.forecast.R`, `DLNM_LL.R`, and `DLNM_LL.forecast.R` fit and forecast DLNM--LC and DLNM--LL models.
