@@ -88,7 +88,7 @@ Rscript -e "render('Code/Main_Paper/Section_5_Mortality_projection/04_RCP_annual
 Rscript -e "render('Code/Main_Paper/Section_5_Mortality_projection/05_RCP_annualized_visualization.Rmd')"
 ```
 ## Supplementary Material
-- The code related to **Section C, D** and **E** of Supplementary Material can be found in `Code/Supplementary`.
+- The code related to **Section C, D** and **E** of Supplementary Material can be found in `Code/Supplementary/`.
 ### **Section C**
 - The code for **Section C** of Supplementary Material can be found `Code/Supplementary/Section_C_Figures_of_specific_lagged_effects_via_DLNM.Rmd`.
 - We present the lagged effects via DLNM for DLNM--LC and DLNM--LL models in **Figure C.1, C.2, C.3, C.4, C.5** and **C.6**.
