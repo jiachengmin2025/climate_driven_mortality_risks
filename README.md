@@ -20,9 +20,10 @@ Rscript package_requirements.R
 - `Code` folder contains all the code to reproduce the results.
   - `Function` subfolder within `Code` contains the core model functions.
 - `Data` folder contains the death count data, population data, historical UTCI data, and scenario-based UTCI data (RCP2.6 and RCP8.5).
-- The code related to the manuscript can be found in `Code/Main_paper/*`. The code related to Supplementary Material can be found in `Code/Supplementary/*`.
 
-## Section 3: Data
+## Manuscript
+The code related to  **Section 3, 4,** and **5** of the manuscript can be found in `Code/Main_paper/*`.
+### Section 3: Data
 - The code for **Section 3** of the manuscript can be found `Code/Main_paper/Section_3_Data/*`.
 - We visualize the weekly historical mortality rates (2015-2019) in **Figure 1**, and UTCI data in **Figure 2**.
 - Use the following code to reproduce **Figure 1** and **Figure 2** of the manuscript.
@@ -30,7 +31,7 @@ Rscript package_requirements.R
 Rscript -e "render('Code/Main_paper/Section_3_Data/01_Historical_data_aggregation.Rmd')"
 ``` 
 
-## Section 4: Empirical results
+### Section 4: Empirical results
 - The code for **Section 4** of the manuscript can be found `Code/Main_paper/Section_4_Empirical_results/*`.
 - We calibrate stochastic mortality component (**Section 4.1**) by visualizing the fitted time-varying factors for LC, LL, DLNM--LC, and DLNM--LL models in **Figure 3** and **Figure 4**. Then we calibrate DLNM climate-driven mortality component (**Section 4.2**) in DLNM--LC and DLNM--LC model by visualizing overall cumulative effects of UTCI (**Section 4.3**) in **Figure 5** and present the coefficients of $\text{HWD}_t$ and $\text{CWD}_t$ in **Table 1**. 
 - Use the following code to reproduce **Figure 3, 4**, and **5**, and **Table 1** of the manuscript.
@@ -43,7 +44,7 @@ Rscript -e "render('Code/Main_paper/Section_4_Empirical_results/01_DLNM_LC_LL_ca
 Rscript -e "render('Code/Main_paper/Section_4_Empirical_results/02_model_comparison_MAE_table.Rmd')"
 ```
 
-## Section 5: Mortality projections under RCP scenarios
+### Section 5: Mortality projections under RCP scenarios
 - The code for **Section 5** of the manuscript can be found `Code/Main_paper/Section_5_Mortality_projection/*`
 - We first process the future UTCI data under RCP2.6 and RCP8.5.
 - Use the following code to process the future UTCI data.
@@ -70,17 +71,21 @@ Rscript -e "render('Code/Main_paper/Section_5_Mortality_projection/04_RCP_annual
 Rscript -e "render('Code/Main_paper/Section_5_Mortality_projection/05_RCP_annualized_visualization.Rmd')"
 ```
 ## Supplementary Material
-- In **Section C**, we present the lagged effects via DLNM across all regions for DLNM--LC and DLNM--LL models in **Figure C.1, C.2, C.3, C.4, C.5** and **C.6**.
+- The code related to **Section C, D** and **E** of Supplementary Material can be found in `Code/Supplementary/*`.
+### **Section C**
+- We present the lagged effects via DLNM across all regions for DLNM--LC and DLNM--LL models in **Figure C.1, C.2, C.3, C.4, C.5** and **C.6**.
 - Use the following code to reproduce **Figure C.1, C.2, C.3, C.4, C.5** and **C.6**.
 ```shell
 Rscript -e "render('Code/Supplementary/Section_C_Figures_of_specific_lagged_effects_via_DLNM.Rmd')"
 ```
-- In Section D, we present the optimal time series model for time-varying factors (**Section D.1**) and seasonality test on model residuals (**Section D.2**).
+### **Section D**
+- We present the optimal time series model for time-varying factors (**Section D.1**) and seasonality test on model residuals (**Section D.2**).
 - Use the following code to reproduce **Table D.1, D.2, D.3** and **D.4**.
 ```shell
 Rscript -e "render('Code/Supplementary/Section_D_Model_specifications_and_diagnostics.Rmd')"
 ```
-- In **Section E**, we report the forecast performance under alternative heat and cold wave definitions, reporting forecast MAE from expanding-window cross-validation in **Table E.5** and **E.6**.
+### **Section E**
+- We report the forecast performance under alternative heat and cold wave definitions, reporting forecast MAE from expanding-window cross-validation in **Table E.5** and **E.6**.
 - Use the following code to reproduce **Table E.5, E.6**.
 ```shell
 Rscript -e "render('Code/Supplementary/Section_E_Alternative_heat_and_cold_wave_definitions.Rmd')"
