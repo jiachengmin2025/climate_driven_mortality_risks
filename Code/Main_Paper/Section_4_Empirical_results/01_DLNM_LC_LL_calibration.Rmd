@@ -451,7 +451,8 @@ make_wave_coef_latex <- function(coef_table) {
     "\\noalign{\\vskip 6pt}",
     "\\end{tabular}",
     "}",
-    "\\footnotesize{Level of significance: $0.01$:***, $0.05$:**, $0.1$:*}",
+    "\\par\\vspace{6pt}",
+    "{\\footnotesize Level of significance: $0.01$:***, $0.05$:**, $0.1$:*\\par}",
     "\\caption{\\small Coefficients of $\\text{HWD}_t$ and $\\text{CWD}_t$ in the DLNM component of DLNM--LC and DLNM--LL models.}",
     "\\label{hwd_cwd_coefficients_combined}",
     "\\end{table}"
