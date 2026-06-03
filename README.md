@@ -3,6 +3,11 @@ This repository supports the paper ''Mortality Forecasting under Climate Risk: A
 
 This repository contains the mortality dataset, UTCI dataset and necessary code to reproduce tables and figures in the paper.
 
+## Overview
+- `environment.Rproj` initializes the project.
+- `Code` folder contains all the code to reproduce the results.
+- `Data` folder contains the death count data, population data, historical UTCI data, and scenario-based UTCI data (RCP2.6 and RCP8.5).
+
 ## Package Requirements
 The following packages are required to finish the experiments.
 - `readxl`, `writexl`, `dplyr`, `tidyr`, `reshape2`, `zoo`, `ISOweek` for data imputation.
@@ -14,12 +19,6 @@ All packages are available on CRAN. To check whether all packages are installed 
 ```shell
 Rscript package_requirements.R
 ```
-
-## Overview
-- `environment.Rproj` initializes the project.
-- `Code` folder contains all the code to reproduce the results.
-- `Data` folder contains the death count data, population data, historical UTCI data, and scenario-based UTCI data (RCP2.6 and RCP8.5).
-
 
 ## Function
 `Code/Function/` contains  functions used by the R Markdown files.
