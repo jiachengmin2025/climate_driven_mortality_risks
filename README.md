@@ -1,4 +1,4 @@
-  # Mortality Forecasting under Climate Risk: A Stochastic Approach with Distributed Lag Non-Linear Models
+# Mortality Forecasting under Climate Risk: A Stochastic Approach with Distributed Lag Non-Linear Models
 This repository supports the paper ''Mortality Forecasting under Climate Risk: A Stochastic Approach with Distributed Lag Non-Linear Models (available on <a href="https://arxiv.org/abs/2506.00561">arXiv</a>)'' written by Jiacheng Min, Han Li, Thomas Nagler, and Shuanming Li. Assessing climate-driven mortality risk has become an emerging area of research in recent decades. In this paper, we propose a novel approach to explicitly incorporate climate-driven effects into both single- and multi-population stochastic mortality models. The new model consists of two components: a stochastic mortality model, and a distributed lag non-linear model (DLNM). The stochastic component captures the non-climate long-term trend, volatility, and seasonal patterns in mortality rates. The DLNM component captures non-linear and lagged effects of climate variables on mortality, as well as the impact of heat waves and cold waves across different age groups. For model calibration, we propose a novel backfitting algorithm that allows us to disentangle the climate-driven mortality risk from the non-climate-driven stochastic mortality risk. We illustrate the effectiveness and improved short-term (1--18 month) forecasting performance of our model against four alternative models, using data from three European regions: Athens, Lisbon, and Rome. Furthermore, as an application of the proposed modeling framework, we utilize future UTCI data generated from climate models to provide total mortality forecasts into 2045 across these regions under two Representative Concentration Pathway (RCP) scenarios, taking both stochastic mortality improvement trend and climate risk into account. The projections show a noticeable decrease in winter mortality alongside a rise in summer mortality, driven by a general increase in UTCI over time. Although we expect slightly lower overall mortality in the short term under RCP8.5 compared to RCP2.6, a long-term increase in total mortality is anticipated under the RCP8.5 scenario.
 
 This repository contains the mortality dataset, UTCI dataset and necessary code to reproduce tables and figures in the paper.
@@ -18,8 +18,21 @@ Rscript package_requirements.R
 ## Overview
 - `environment.Rproj` initializes the project.
 - `Code` folder contains all the code to reproduce the results.
-  - `Function` subfolder within `Code` contains the core model functions.
 - `Data` folder contains the death count data, population data, historical UTCI data, and scenario-based UTCI data (RCP2.6 and RCP8.5).
+
+
+## Function
+`Code/Function/` contains  functions used by the R Markdown files.
+
+- `LC_model.R` and `LL_model.R` fit the baseline Lee--Carter and Li--Lee mortality models.
+- `DLNM_LC.R`, `DLNM_LC.forecast.R`, `DLNM_LL.R`, and `DLNM_LL.forecast.R` fit and forecast the proposed DLNM--LC and DLNM--LL models.
+- `dlnm_proc.R` fits the age-specific Gaussian DLNM component on log mortality rates.
+- `create_train_test_sets.R` constructs expanding-window training and testing sets.
+- `crossbasis_mixed_frequency.R` builds historical weekly cross-basis matrices from daily UTCI data.
+- `Madaniyazi.fit.R`, `Madaniyazi.forecast.R`, `Guirbert.fit.R`, `Guibert.forecast.R`, and `Guibert.create_train_test_sets.R` implement the comparator models.
+- `kt_model.R`, `kappa_fit.R`, and `sarima_table_helpers.R` fit and summarize time-series models for the time-varying mortality factors.
+- `DLNM_residual_diagnostics.R` runs the residual seasonality diagnostics in Supplementary Section D.
+- `rcp_inputs.R`, `rcp_dlnm_simulation.R`, `rcp_annualization.R`, `rcp_visualization.R`, `rcp_legacy_sarima.R`, and `rcp_region_names.R` support the RCP mortality projection and visualization workflow.
 
 ## Manuscript
 The code related to  **Section 3, 4,** and **5** of the manuscript can be found in `Code/Main_paper`.
@@ -38,7 +51,7 @@ Rscript -e "render('Code/Main_paper/Section_3_Data/01_Historical_data_aggregatio
 ```shell
 Rscript -e "render('Code/Main_paper/Section_4_Empirical_results/01_DLNM_LC_LL_calibration.Rmd')"
 ```
-- We perform the expanding-window cross-validation in **Section 4.4** for 6 models: **LC, LL, DLNM--LC, DLNM--LL, Madaniyazi et al., Guibert et al.**. The forecast mean absolute error (MAE) under $\times 100$ scale is reported in **Table 2**.
+- We perform the expanding-window cross-validation in **Section 4.4** for six models: **LC, LL, DLNM--LC, DLNM--LL, Madaniyazi et al., Guibert et al.**. The forecast mean absolute error (MAE) under $\times 100$ scale is reported in **Table 2**.
 - Use the following code to reproduce **Table 2** of the manuscript.
 ```shell
 Rscript -e "render('Code/Main_paper/Section_4_Empirical_results/02_model_comparison_MAE_table.Rmd')"
