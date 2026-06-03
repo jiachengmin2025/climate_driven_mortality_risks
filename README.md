@@ -8,7 +8,7 @@ This repository contains the mortality dataset, UTCI dataset and necessary code 
 - `Code` folder contains all the code to reproduce the results.
 - `Data` folder contains the following datasets:
   - The death count data and population data from Eurostat can be found in `Data/Combined_data`,
-  - Historical UTCI data from ERA5 can be found in `Data/UTCI_data`,
+  - Historical UTCI data from ERA5 can be found in `Data/UTCI_data/Daily_data`,
   - Scenario-based UTCI data can be found in `Data/Simulation_data/UTCI`.
 
 ## Package Requirements
