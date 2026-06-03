@@ -36,7 +36,7 @@ Rscript package_requirements.R
 - `DLNM_residual_diagnostics.R` runs the residual seasonality diagnostics in Supplementary Section D.
 - `rcp_inputs.R`, `rcp_dlnm_simulation.R`, `rcp_annualization.R`, `rcp_visualization.R`, `rcp_legacy_sarima.R`, and `rcp_region_names.R` support the RCP mortality projection and visualization workflow.
 
-More details can be found in `Code/Function/README_function.md`
+More details can be found in `Code/Function/!!!_README_function.md`
 
 ## Manuscript
 The code related to  **Section 3, 4,** and **5** of the manuscript can be found in `Code/Main_paper`.
