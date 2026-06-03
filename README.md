@@ -7,9 +7,9 @@ This repository contains the mortality dataset, UTCI dataset and necessary code 
 - `environment.Rproj` initializes the project.
 - `Code` folder contains all code to reproduce the results. **To facilitate reproducibility checks, we also provide knitted PDF files in the** `Code` **folder showing that the code runs and reproduces the results.**
 - `Data` folder contains the following datasets:
-  - The death count data and population data from <a href="https://ec.europa.eu/eurostat/databrowser/view/demo_r_mweek3/default/table?lang=en">Eurostat</a> can be found in `Data/Combined_data`,
-  - Historical UTCI data from <a href="https://cds.climate.copernicus.eu/datasets/reanalysis-era5-single-levels?tab=download">ERA5</a> can be found in `Data/UTCI_data/Daily_data`,
-  - Scenario-based UTCI data from <a href="cds.climate.copernicus.eu/datasets/projections-cmip5-daily-single-levels?tab=download">CMIP5 model</a> can be found in `Data/Simulation_data/UTCI`.
+  - The death count data and population data from <a href="https://ec.europa.eu/eurostat/databrowser/view/demo_r_mweek3/default/table?lang=en">Eurostat</a> can be found in `Data/Combined_data/`,
+  - Historical UTCI data from <a href="https://cds.climate.copernicus.eu/datasets/reanalysis-era5-single-levels?tab=download">ERA5</a> can be found in `Data/UTCI_data/Daily_data/`,
+  - Scenario-based UTCI data from <a href="cds.climate.copernicus.eu/datasets/projections-cmip5-daily-single-levels?tab=download">CMIP5 model</a> can be found in `Data/Simulation_data/UTCI/`.
 
 ## Package Requirements
 The following packages are required to finish the experiments.
@@ -41,7 +41,7 @@ More details can be found in `Code/Function/!!!_README_function.md`
 ## Manuscript
 The code related to **Sections 3, 4**, and **5** of the manuscript can be found in `Code/Main_Paper/`. The results can be reproduced section by section.
 ### Section 3: Data
-- The code for **Section 3** of the manuscript can be found `Code/Main_Paper/Section_3_Data`.
+- The code for **Section 3** of the manuscript can be found `Code/Main_Paper/Section_3_Data/`.
 - We visualize the weekly historical mortality rates (2015-2019) in **Figure 1**, and UTCI data in **Figure 2**.
 - Use the following code to reproduce **Figure 1** and **Figure 2** of the manuscript.
 ```shell
@@ -49,7 +49,7 @@ Rscript -e "render('Code/Main_Paper/Section_3_Data/01_Historical_data_aggregatio
 ``` 
 
 ### Section 4: Empirical results
-- The code for **Section 4** of the manuscript can be found `Code/Main_Paper/Section_4_Empirical_results`.
+- The code for **Section 4** of the manuscript can be found `Code/Main_Paper/Section_4_Empirical_results/`.
 - We calibrate stochastic mortality component (**Section 4.1**) by visualizing the fitted time-varying factors for LC, LL, DLNM--LC, and DLNM--LL models in **Figure 3** and **Figure 4**. Then we calibrate DLNM climate-driven mortality component (**Section 4.2**) in DLNM--LC and DLNM--LC model by visualizing overall cumulative effects of UTCI (**Section 4.3**) in **Figure 5** and present the coefficients of $\text{HWD}_t$ and $\text{CWD}_t$ in **Table 1**. 
 - Use the following code to reproduce **Figure 3, 4**, and **5**, and **Table 1** of the manuscript.
 ```shell
@@ -62,7 +62,7 @@ Rscript -e "render('Code/Main_Paper/Section_4_Empirical_results/02_model_compari
 ```
 
 ### Section 5: Mortality projections under RCP scenarios
-- The code for **Section 5** of the manuscript can be found `Code/Main_Paper/Section_5_Mortality_projection`
+- The code for **Section 5** of the manuscript can be found `Code/Main_Paper/Section_5_Mortality_projection/`
 - We first process the future UTCI data under RCP2.6 and RCP8.5.
 - Use the following code to initialize and process the future UTCI data.
 ```shell
