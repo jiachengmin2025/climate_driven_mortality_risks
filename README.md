@@ -1,7 +1,7 @@
   # Mortality Forecasting under Climate Risk: A Stochastic Approach with Distributed Lag Non-Linear Models
 This repository supports the paper ''Mortality Forecasting under Climate Risk: A Stochastic Approach with Distributed Lag Non-Linear Models (available on <a href="https://arxiv.org/abs/2506.00561">arXiv</a>)'' written by Jiacheng Min, Han Li, Thomas Nagler, and Shuanming Li. Assessing climate-driven mortality risk has become an emerging area of research in recent decades. In this paper, we propose a novel approach to explicitly incorporate climate-driven effects into both single- and multi-population stochastic mortality models. The new model consists of two components: a stochastic mortality model, and a distributed lag non-linear model (DLNM). The stochastic component captures the non-climate long-term trend, volatility, and seasonal patterns in mortality rates. The DLNM component captures non-linear and lagged effects of climate variables on mortality, as well as the impact of heat waves and cold waves across different age groups. For model calibration, we propose a novel backfitting algorithm that allows us to disentangle the climate-driven mortality risk from the non-climate-driven stochastic mortality risk. We illustrate the effectiveness and improved short-term (1--18 month) forecasting performance of our model against four alternative models, using data from three European regions: Athens, Lisbon, and Rome. Furthermore, as an application of the proposed modeling framework, we utilize future UTCI data generated from climate models to provide total mortality forecasts into 2045 across these regions under two Representative Concentration Pathway (RCP) scenarios, taking both stochastic mortality improvement trend and climate risk into account. The projections show a noticeable decrease in winter mortality alongside a rise in summer mortality, driven by a general increase in UTCI over time. Although we expect slightly lower overall mortality in the short term under RCP8.5 compared to RCP2.6, a long-term increase in total mortality is anticipated under the RCP8.5 scenario.
 
-This repository contains the mortality dataset, UTCI dataset and necessary code to produce tables and figures in the paper.
+This repository contains the mortality dataset, UTCI dataset and necessary code to reproduce tables and figures in the paper.
 
 ## Package Requirements
 The following packages are required to finish the experiments.
@@ -18,10 +18,12 @@ Rscript package_requirements.R
 ## Overview
 - `environment.Rproj` initializes the project.
 - `Code` folder contains all the code to reproduce the results.
-- `Function` subfolder within `Code` contains the core model functions.
-- `Data` folder contains the raw death count data, population data, historical UTCI data, and scenario-based UTCI data (RCP2.6 and RCP8.5).
+  - `Function` subfolder within `Code` contains the core model functions.
+- `Data` folder contains the death count data, population data, historical UTCI data, and scenario-based UTCI data (RCP2.6 and RCP8.5).
+- The code related to the manuscript can be found in `Code/Main_paper/*`. The code related to Supplementary Material can be found in `Code/Supplementary/*`.
 
 ## Section 3: Data
+- The code for **Section 3** of the manuscript can be found `Code/Main_paper/Section_3_Data/*`.
 - We visualize the weekly historical mortality rates (2015-2019) in **Figure 1**, and UTCI data in **Figure 2**.
 - Use the following code to reproduce **Figure 1** and **Figure 2** of the manuscript.
 ```shell
@@ -29,6 +31,7 @@ Rscript -e "render('Code/Main_paper/Section_3_Data/01_Historical_data_aggregatio
 ``` 
 
 ## Section 4: Empirical results
+- The code for **Section 4** of the manuscript can be found `Code/Main_paper/Section_4_Empirical_results/*`.
 - We calibrate stochastic mortality component (**Section 4.1**) by visualizing the fitted time-varying factors for LC, LL, DLNM--LC, and DLNM--LL models in **Figure 3** and **Figure 4**. Then we calibrate DLNM climate-driven mortality component (**Section 4.2**) in DLNM--LC and DLNM--LC model by visualizing overall cumulative effects of UTCI (**Section 4.3**) in **Figure 5** and present the coefficients of $\text{HWD}_t$ and $\text{CWD}_t$ in **Table 1**. 
 - Use the following code to reproduce **Figure 3, 4**, and **5**, and **Table 1** of the manuscript.
 ```shell
@@ -41,6 +44,7 @@ Rscript -e "render('Code/Main_paper/Section_4_Empirical_results/02_model_compari
 ```
 
 ## Section 5: Mortality projections under RCP scenarios
+- The code for **Section 5** of the manuscript can be found `Code/Main_paper/Section_5_Mortality_projection/*`
 - We first process the future UTCI data under RCP2.6 and RCP8.5.
 - Use the following code to process the future UTCI data.
 ```shell
