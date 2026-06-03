@@ -7,9 +7,9 @@ This repository contains the mortality dataset, UTCI dataset and necessary code 
 - `environment.Rproj` initializes the project.
 - `Code` folder contains all the code to reproduce the results.
 - `Data` folder contains the following datasets:
-  - The death count data and population data from Eurostat (`Data/Combined_data`),
-  - Historical UTCI data from ERA5 (`Data/UTCI_data`),
-  - Scenario-based UTCI data (`Data/Simulation_data/UTCI`).
+  - The death count data and population data from Eurostat can be found in `Data/Combined_data`,
+  - Historical UTCI data from ERA5 can be found in `Data/UTCI_data`,
+  - Scenario-based UTCI data can be found `Data/Simulation_data/UTCI`.
 
 ## Package Requirements
 The following packages are required to finish the experiments.
