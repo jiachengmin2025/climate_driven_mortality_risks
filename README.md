@@ -23,19 +23,19 @@ Rscript package_requirements.R
 
 ## Section 3: Data
 - We visualize the weekly historical mortality rates (2015-2019) in **Figure 1**, and UTCI data in **Figure 2**.
-- Use the following code to reproduce **Figure 1** and **Figure 2**.
+- Use the following code to reproduce **Figure 1** and **Figure 2** of the manuscript.
 ```shell
 Rscript -e "render('Code/Main_paper/Section_3_Data/01_Historical_data_aggregation.Rmd')"
 ``` 
 
 ## Section 4: Empirical results
 - We calibrate stochastic mortality component (**Section 4.1**) by visualizing the fitted time-varying factors for LC, LL, DLNM--LC, and DLNM--LL models in **Figure 3** and **Figure 4**. Then we calibrate DLNM climate-driven mortality component (**Section 4.2**) in DLNM--LC and DLNM--LC model by visualizing overall cumulative effects of UTCI (**Section 4.3**) in Figure 5 and present the coefficients of $\text{HWD}_t$ and $\text{CWD}_t$ in Table 1. 
-- Use the following code to reproduce **Figure 3, 4**, and **5**, and **Table 1**.
+- Use the following code to reproduce **Figure 3, 4**, and **5**, and **Table 1** of the manuscript.
 ```shell
 Rscript -e "render('Code/Main_paper/Section_4_Empirical_results/01_DLNM_LC_LL_calibration.Rmd')"
 ```
 - We perform the expanding-window cross-validation in **Section 4.4** for 6 models: **LC, LL, DLNM--LC, DLNM--LL, Madaniyazi et al., Guibert et al.**. The forecast mean absolute error (MAE) under $\times 100$ scale is reported in **Table 2**.
-- Use the following code to reproduce **Table 2**.
+- Use the following code to reproduce **Table 2** of the manuscript.
 ```shell
 Rscript -e "render('Code/Main_paper/Section_4_Empirical_results/02_model_comparison_MAE_table.Rmd')"
 ```
