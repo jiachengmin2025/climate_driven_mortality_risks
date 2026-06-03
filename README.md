@@ -39,7 +39,7 @@ Rscript package_requirements.R
 More details can be found in `Code/Function/!!!_README_function.md`
 
 ## Manuscript
-The code related to **Sections 3, 4**, and **5** of the manuscript can be found in `Code/Main_Paper/`. The analyses can be reproduced section by section.
+The code related to **Sections 3, 4**, and **5** of the manuscript can be found in `Code/Main_Paper/`. The results can be reproduced section by section.
 ### Section 3: Data
 - The code for **Section 3** of the manuscript can be found `Code/Main_Paper/Section_3_Data`.
 - We visualize the weekly historical mortality rates (2015-2019) in **Figure 1**, and UTCI data in **Figure 2**.
