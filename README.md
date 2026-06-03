@@ -73,18 +73,21 @@ Rscript -e "render('Code/Main_paper/Section_5_Mortality_projection/05_RCP_annual
 ## Supplementary Material
 - The code related to **Section C, D** and **E** of Supplementary Material can be found in `Code/Supplementary`.
 ### **Section C**
-- We present the lagged effects via DLNM across all regions for DLNM--LC and DLNM--LL models in **Figure C.1, C.2, C.3, C.4, C.5** and **C.6**.
+- The code for **Section C** of Supplementary Material can be found `Code/Supplementary/Section_C_Figures_of_specific_lagged_effects_via_DLNM.Rmd`.
+- We present the lagged effects via DLNM for DLNM--LC and DLNM--LL models in **Figure C.1, C.2, C.3, C.4, C.5** and **C.6**.
 - Use the following code to reproduce **Figure C.1, C.2, C.3, C.4, C.5** and **C.6** of Supplementary Material.
 ```shell
 Rscript -e "render('Code/Supplementary/Section_C_Figures_of_specific_lagged_effects_via_DLNM.Rmd')"
 ```
 ### **Section D**
+- The code for **Section D** of Supplementary Material can be found `Code/Supplementary/Section_D_Model_specifications_and_diagnostics.Rmd`
 - We present the optimal time series model for time-varying factors (**Section D.1**) and seasonality test on model residuals (**Section D.2**).
 - Use the following code to reproduce **Table D.1, D.2, D.3** and **D.4** of Supplementary Material.
 ```shell
 Rscript -e "render('Code/Supplementary/Section_D_Model_specifications_and_diagnostics.Rmd')"
 ```
 ### **Section E**
+- The code for **Section E** of Supplementary Material can be found `Code/Supplementary/Section_E_Alternative_heat_and_cold_wave_definitions.Rmd`
 - We report the forecast performance under alternative heat and cold wave definitions, reporting forecast MAE from expanding-window cross-validation in **Table E.5** and **E.6**.
 - Use the following code to reproduce **Table E.5, E.6** of Supplementary Material.
 ```shell
