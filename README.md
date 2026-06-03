@@ -10,7 +10,7 @@ This repository contains the mortality dataset, UTCI dataset and necessary code 
   - The death count data and population data from Eurostat can be found in `Data/Combined_data`,
   - Historical UTCI data from ERA5 can be found in `Data/UTCI_data/Daily_data`,
   - Scenario-based UTCI data can be found in `Data/Simulation_data/UTCI`.
-
+- **To facilitate reproducibility checks, we provide knitted PDF outputs showing that the code runs and reproduces the results.**
 ## Package Requirements
 The following packages are required to finish the experiments.
 - `readxl`, `writexl`, `dplyr`, `tidyr`, `reshape2`, `zoo`, `ISOweek` for data imputation.
