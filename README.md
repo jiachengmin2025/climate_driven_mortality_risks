@@ -55,7 +55,7 @@ Rscript -e "render('Code/Main_Paper/Section_3_Data/01_Historical_data_aggregatio
 ```shell
 Rscript -e "render('Code/Main_Paper/Section_4_Empirical_results/01_DLNM_LC_LL_calibration.Rmd')"
 ```
-- To compare different models, we perform the expanding-window cross-validation in **Section 4.4** for six models: **LC, LL, DLNM--LC, DLNM--LL, Madaniyazi et al., Guibert et al.**. The forecast mean absolute error (MAE) under $\times 100$ scale is reported in **Table 2**.
+- **To compare different models**, we perform the expanding-window cross-validation in **Section 4.4** for six models: **LC, LL, DLNM--LC, DLNM--LL, Madaniyazi et al., Guibert et al.**. The forecast mean absolute error (MAE) under $\times 100$ scale is reported in **Table 2**.
 - Use the following code to reproduce **Table 2** of the manuscript.
 ```shell
 Rscript -e "render('Code/Main_Paper/Section_4_Empirical_results/02_model_comparison_MAE_table.Rmd')"
