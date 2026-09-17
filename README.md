@@ -113,4 +113,4 @@ Rscript -e "render('Code/Supplementary/Section_E_Alternative_heat_and_cold_wave_
 ```
 
 ## References
-Min, J., Li, H., Nagler, T., & Li, S. (2025). *Assessing Climate-Driven Mortality Risk: A Stochastic Approach with Distributed Lag Non-Linear Models*. arXiv preprint https://arxiv.org/abs/2506.00561.
+Min, J., Li, H., Nagler, T., & Li, S. (2026). *Mortality forecasting under climate risk: a stochastic approach with distributed lag nonlinear models*. *Journal of the Royal Statistical Society Series A: Statistics in Society*, qnag082.
